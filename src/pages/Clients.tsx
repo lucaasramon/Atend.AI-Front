@@ -111,6 +111,12 @@ export default function Clients() {
           </tbody>
         </table>
       </div>
+
+      <NewClientDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onClientCreated={(client) => setClients((prev) => [client, ...prev])}
+      />
     </div>
   );
 }
