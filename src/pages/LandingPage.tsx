@@ -203,6 +203,64 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Platform Preview */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 space-y-3">
+            <h2 className="text-3xl md:text-4xl font-bold">Conheça a plataforma por dentro</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Veja as telas reais que você terá acesso ao contratar um dos nossos planos.
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto space-y-16">
+            {/* Dashboard Preview */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <h3 className="text-xl font-semibold">Dashboard de Atendimentos</h3>
+                <Badge variant="secondary" className="text-xs">Starter</Badge>
+                <Badge variant="secondary" className="text-xs">Pro</Badge>
+                <Badge variant="secondary" className="text-xs">Business</Badge>
+              </div>
+              <p className="text-center text-muted-foreground text-sm max-w-xl mx-auto">
+                Acompanhe métricas em tempo real: atendimentos, leads capturados, taxa de resolução e tempo médio de resposta.
+              </p>
+              <div className="rounded-xl border border-border overflow-hidden shadow-lg">
+                <img
+                  src={screenshotDashboard}
+                  alt="Dashboard de atendimentos do AtendIA mostrando métricas e gráficos"
+                  className="w-full h-auto"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+
+            {/* Leads Preview */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <h3 className="text-xl font-semibold">Gestão de Leads</h3>
+                <Badge className="text-xs bg-primary text-primary-foreground">Pro</Badge>
+                <Badge className="text-xs bg-primary text-primary-foreground">Business</Badge>
+              </div>
+              <p className="text-center text-muted-foreground text-sm max-w-xl mx-auto">
+                Visualize todos os contatos, análise de sentimento, histórico de conversas e exporte seus leads facilmente.
+              </p>
+              <div className="rounded-xl border border-border overflow-hidden shadow-lg relative">
+                <img
+                  src={screenshotLeads}
+                  alt="Tela de gestão de leads do AtendIA com tabela de contatos e análise de sentimento"
+                  className="w-full h-auto"
+                  loading="lazy"
+                />
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-primary text-primary-foreground text-xs">A partir do Pro</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="pricing" className="py-20">
         <div className="container mx-auto px-4">
