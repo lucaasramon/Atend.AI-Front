@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Bot, Zap, Shield } from "lucide-react";
+import { User, Bot, Zap, Shield, Upload, FileText, X, Plus, HelpCircle } from "lucide-react";
 import { Client } from "@/data/mockData";
 import { toast } from "sonner";
 
