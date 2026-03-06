@@ -92,6 +92,10 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
     onClientCreated(newClient);
     toast.success(`${data.company} criado com sucesso! Automação configurada.`);
     form.reset();
+    setKnowledgeFiles([]);
+    setFaqItems([]);
+    setNewFaqQuestion("");
+    setNewFaqAnswer("");
     setActiveTab("info");
     onOpenChange(false);
   };
