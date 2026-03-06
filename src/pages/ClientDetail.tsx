@@ -25,7 +25,7 @@ export default function ClientDetail() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/clients">
+        <Link to="/admin/clients">
           <Button variant="ghost" size="sm" className="text-muted-foreground">
             <ArrowLeft className="w-4 h-4" />
           </Button>
