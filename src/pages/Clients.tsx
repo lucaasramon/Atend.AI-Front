@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import StatusBadge from "@/components/StatusBadge";
 import { mockClients, Client } from "@/data/mockData";
 import { toast } from "sonner";
+import NewClientDialog from "@/components/NewClientDialog";
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>(mockClients);
   const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const filtered = clients.filter(
     (c) =>
