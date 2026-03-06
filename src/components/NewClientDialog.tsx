@@ -43,8 +43,11 @@ interface NewClientDialogProps {
 
 export default function NewClientDialog({ open, onOpenChange, onClientCreated }: NewClientDialogProps) {
   const [activeTab, setActiveTab] = useState("info");
-
-  const form = useForm<ClientFormData>({
+  const [knowledgeFiles, setKnowledgeFiles] = useState<File[]>([]);
+  const [faqItems, setFaqItems] = useState<{ question: string; answer: string }[]>([]);
+  const [newFaqQuestion, setNewFaqQuestion] = useState("");
+  const [newFaqAnswer, setNewFaqAnswer] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
