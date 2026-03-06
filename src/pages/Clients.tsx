@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import StatusBadge from "@/components/StatusBadge";
 import { mockClients, Client } from "@/data/mockData";
 import { toast } from "sonner";
+import NewClientDialog from "@/components/NewClientDialog";
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>(mockClients);
   const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const filtered = clients.filter(
     (c) =>
@@ -40,7 +42,7 @@ export default function Clients() {
           <h1 className="text-2xl font-semibold text-foreground">Clientes</h1>
           <p className="text-sm text-muted-foreground mt-1">{clients.length} cadastrados</p>
         </div>
-        <Button className="gradient-primary text-primary-foreground border-0 shadow-glow">
+        <Button onClick={() => setDialogOpen(true)} className="gradient-primary text-primary-foreground border-0 shadow-glow">
           <Plus className="w-4 h-4 mr-2" />
           Novo Cliente
         </Button>
@@ -109,6 +111,12 @@ export default function Clients() {
           </tbody>
         </table>
       </div>
+
+      <NewClientDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onClientCreated={(client) => setClients((prev) => [client, ...prev])}
+      />
     </div>
   );
 }
