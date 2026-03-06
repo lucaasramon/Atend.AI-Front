@@ -4,7 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Star, StarOff } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, Download, Star, StarOff, MessageSquare } from "lucide-react";
+
+interface Message {
+  id: string;
+  from: "bot" | "client";
+  text: string;
+  time: string;
+}
 
 interface Lead {
   id: string;
@@ -14,14 +23,53 @@ interface Lead {
   date: string;
   saved: boolean;
   sentiment: "positive" | "neutral" | "negative";
+  conversation: Message[];
 }
 
 const mockLeads: Lead[] = [
-  { id: "1", name: "Maria Silva", phone: "+5511999112233", lastMessage: "Quero saber mais sobre o plano Pro", date: "2026-03-06 14:22", saved: true, sentiment: "positive" },
-  { id: "2", name: "Carlos Souza", phone: "+5511988223344", lastMessage: "Qual o preço do serviço?", date: "2026-03-06 13:10", saved: false, sentiment: "neutral" },
-  { id: "3", name: "Juliana Alves", phone: "+5521977334455", lastMessage: "Não funcionou como esperado", date: "2026-03-06 11:45", saved: false, sentiment: "negative" },
-  { id: "4", name: "Pedro Santos", phone: "+5531966445566", lastMessage: "Adorei o atendimento!", date: "2026-03-05 18:30", saved: true, sentiment: "positive" },
-  { id: "5", name: "Fernanda Lima", phone: "+5541955556677", lastMessage: "Vocês têm desconto para anual?", date: "2026-03-05 16:15", saved: false, sentiment: "neutral" },
+  {
+    id: "1", name: "Maria Silva", phone: "+5511999112233", lastMessage: "Quero saber mais sobre o plano Pro", date: "2026-03-06 14:22", saved: true, sentiment: "positive",
+    conversation: [
+      { id: "1a", from: "client", text: "Oi, boa tarde!", time: "14:20" },
+      { id: "1b", from: "bot", text: "Olá Maria! Bem-vinda! Como posso te ajudar hoje? 😊", time: "14:20" },
+      { id: "1c", from: "client", text: "Quero saber mais sobre o plano Pro", time: "14:21" },
+      { id: "1d", from: "bot", text: "Claro! O plano Pro custa R$297/mês e inclui até 10.000 mensagens, IA avançada com GPT-4, relatórios detalhados e suporte prioritário. Quer que eu te envie mais detalhes?", time: "14:21" },
+      { id: "1e", from: "client", text: "Sim, por favor! Parece ótimo", time: "14:22" },
+      { id: "1f", from: "bot", text: "Perfeito! Vou encaminhar as informações completas. Um momento! 🚀", time: "14:22" },
+    ],
+  },
+  {
+    id: "2", name: "Carlos Souza", phone: "+5511988223344", lastMessage: "Qual o preço do serviço?", date: "2026-03-06 13:10", saved: false, sentiment: "neutral",
+    conversation: [
+      { id: "2a", from: "client", text: "Qual o preço do serviço?", time: "13:10" },
+      { id: "2b", from: "bot", text: "Olá Carlos! Temos 3 planos: Starter (R$147), Pro (R$297) e Business (R$497). Qual deles te interessa mais?", time: "13:10" },
+    ],
+  },
+  {
+    id: "3", name: "Juliana Alves", phone: "+5521977334455", lastMessage: "Não funcionou como esperado", date: "2026-03-06 11:45", saved: false, sentiment: "negative",
+    conversation: [
+      { id: "3a", from: "client", text: "O bot parou de responder ontem à noite", time: "11:40" },
+      { id: "3b", from: "bot", text: "Olá Juliana! Peço desculpas pelo inconveniente. Vou verificar o que aconteceu. Pode me dizer por volta de que horas foi?", time: "11:41" },
+      { id: "3c", from: "client", text: "Foi por volta das 22h. Não funcionou como esperado", time: "11:43" },
+      { id: "3d", from: "bot", text: "Entendi. Vou registrar isso e encaminhar para nossa equipe técnica. Você receberá um retorno em breve. Desculpe novamente! 🙏", time: "11:45" },
+    ],
+  },
+  {
+    id: "4", name: "Pedro Santos", phone: "+5531966445566", lastMessage: "Adorei o atendimento!", date: "2026-03-05 18:30", saved: true, sentiment: "positive",
+    conversation: [
+      { id: "4a", from: "client", text: "Adorei o atendimento!", time: "18:30" },
+      { id: "4b", from: "bot", text: "Que bom ouvir isso, Pedro! Ficamos felizes em ajudar. Qualquer coisa, estamos aqui! 💚", time: "18:30" },
+    ],
+  },
+  {
+    id: "5", name: "Fernanda Lima", phone: "+5541955556677", lastMessage: "Vocês têm desconto para anual?", date: "2026-03-05 16:15", saved: false, sentiment: "neutral",
+    conversation: [
+      { id: "5a", from: "client", text: "Vocês têm desconto para anual?", time: "16:15" },
+      { id: "5b", from: "bot", text: "Oi Fernanda! Sim, oferecemos 20% de desconto para planos anuais. Quer que eu simule o valor para algum plano específico?", time: "16:15" },
+      { id: "5c", from: "client", text: "Sim, para o Business", time: "16:16" },
+      { id: "5d", from: "bot", text: "No plano Business anual, o valor sai por R$397/mês (total de R$4.764/ano). Uma economia de R$1.200! Quer prosseguir?", time: "16:16" },
+    ],
+  },
 ];
 
 const sentimentConfig = {
@@ -33,6 +81,7 @@ const sentimentConfig = {
 export default function ClientLeads() {
   const [leads, setLeads] = useState(mockLeads);
   const [search, setSearch] = useState("");
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const filtered = leads.filter(
     (l) => l.name.toLowerCase().includes(search.toLowerCase()) || l.phone.includes(search)
@@ -70,6 +119,7 @@ export default function ClientLeads() {
                 <TableHead className="hidden md:table-cell">Última Mensagem</TableHead>
                 <TableHead>Sentimento</TableHead>
                 <TableHead>Data</TableHead>
+                <TableHead className="w-12">Conversa</TableHead>
                 <TableHead className="w-12">Salvar</TableHead>
               </TableRow>
             </TableHeader>
@@ -90,6 +140,11 @@ export default function ClientLeads() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{lead.date}</TableCell>
                     <TableCell>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedLead(lead)}>
+                        <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                    </TableCell>
+                    <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleSaved(lead.id)}>
                         {lead.saved ? (
                           <Star className="w-4 h-4 fill-warning text-warning" />
@@ -105,6 +160,39 @@ export default function ClientLeads() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialog de conversa */}
+      <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Conversa com {selectedLead?.name}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">{selectedLead?.phone} · {selectedLead?.date}</p>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-3 py-2">
+              {selectedLead?.conversation.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.from === "bot" ? "justify-start" : "justify-end"}`}>
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                      msg.from === "bot"
+                        ? "bg-muted text-foreground rounded-bl-md"
+                        : "bg-primary text-primary-foreground rounded-br-md"
+                    }`}
+                  >
+                    <p>{msg.text}</p>
+                    <span className={`text-[10px] mt-1 block ${msg.from === "bot" ? "text-muted-foreground" : "text-primary-foreground/70"}`}>
+                      {msg.time}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
