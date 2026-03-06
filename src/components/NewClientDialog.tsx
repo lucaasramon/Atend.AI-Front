@@ -48,6 +48,8 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
   const [newFaqQuestion, setNewFaqQuestion] = useState("");
   const [newFaqAnswer, setNewFaqAnswer] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
