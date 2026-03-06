@@ -42,7 +42,7 @@ export default function Clients() {
           <h1 className="text-2xl font-semibold text-foreground">Clientes</h1>
           <p className="text-sm text-muted-foreground mt-1">{clients.length} cadastrados</p>
         </div>
-        <Button className="gradient-primary text-primary-foreground border-0 shadow-glow">
+        <Button onClick={() => setDialogOpen(true)} className="gradient-primary text-primary-foreground border-0 shadow-glow">
           <Plus className="w-4 h-4 mr-2" />
           Novo Cliente
         </Button>
