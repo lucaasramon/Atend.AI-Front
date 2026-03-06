@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/clients", label: "Clientes", icon: Users },
-  { path: "/automations", label: "Automações", icon: Bot },
-  { path: "/health", label: "Saúde & Logs", icon: Activity },
-  { path: "/settings", label: "Configurações", icon: Settings },
+  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/admin/clients", label: "Clientes", icon: Users },
+  { path: "/admin/automations", label: "Automações", icon: Bot },
+  { path: "/admin/health", label: "Saúde & Logs", icon: Activity },
+  { path: "/admin/settings", label: "Configurações", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -48,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 py-4 px-2 space-y-1">
           {navItems.map((item) => {
             const active = location.pathname === item.path || 
-              (item.path !== "/" && location.pathname.startsWith(item.path));
+              (item.path !== "/admin" && location.pathname.startsWith(item.path));
             return (
               <Link
                 key={item.path}
