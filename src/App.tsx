@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminLayout from "@/components/AdminLayout";
 import ClientLayout from "@/components/ClientLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -27,27 +29,29 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
+        <AuthProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
 
-          {/* Client Area */}
-          <Route path="/client/dashboard" element={<ClientLayout><ClientDashboard /></ClientLayout>} />
-          <Route path="/client/leads" element={<ClientLayout><ClientLeads /></ClientLayout>} />
-          <Route path="/client/billing" element={<ClientLayout><ClientBilling /></ClientLayout>} />
-          <Route path="/client/templates" element={<ClientLayout><ClientTemplates /></ClientLayout>} />
+            {/* Client Area - Protected */}
+            <Route path="/client/dashboard" element={<ProtectedRoute><ClientLayout><ClientDashboard /></ClientLayout></ProtectedRoute>} />
+            <Route path="/client/leads" element={<ProtectedRoute><ClientLayout><ClientLeads /></ClientLayout></ProtectedRoute>} />
+            <Route path="/client/billing" element={<ProtectedRoute><ClientLayout><ClientBilling /></ClientLayout></ProtectedRoute>} />
+            <Route path="/client/templates" element={<ProtectedRoute><ClientLayout><ClientTemplates /></ClientLayout></ProtectedRoute>} />
 
-          {/* Admin */}
-          <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />
-          <Route path="/admin/clients" element={<AdminLayout><Clients /></AdminLayout>} />
-          <Route path="/admin/clients/:id" element={<AdminLayout><ClientDetail /></AdminLayout>} />
-          <Route path="/admin/automations" element={<AdminLayout><Automations /></AdminLayout>} />
-          <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
-          <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
+            {/* Admin */}
+            <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />
+            <Route path="/admin/clients" element={<AdminLayout><Clients /></AdminLayout>} />
+            <Route path="/admin/clients/:id" element={<AdminLayout><ClientDetail /></AdminLayout>} />
+            <Route path="/admin/automations" element={<AdminLayout><Automations /></AdminLayout>} />
+            <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
+            <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
