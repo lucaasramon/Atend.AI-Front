@@ -16,6 +16,7 @@ import LoginPage from "@/pages/LoginPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
+import ClientTemplates from "@/pages/client/ClientTemplates";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/client/dashboard" element={<ClientLayout><ClientDashboard /></ClientLayout>} />
           <Route path="/client/leads" element={<ClientLayout><ClientLeads /></ClientLayout>} />
           <Route path="/client/billing" element={<ClientLayout><ClientBilling /></ClientLayout>} />
+          <Route path="/client/templates" element={<ClientLayout><ClientTemplates /></ClientLayout>} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />

@@ -14,7 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          plan: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          plan?: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          plan?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      response_templates: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          shortcut: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          shortcut: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          shortcut?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      robot_interruptions: {
+        Row: {
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          paused_at: string
+          reason: string | null
+          remote_jid: string
+          tenant_id: string
+        }
+        Insert: {
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          paused_at?: string
+          reason?: string | null
+          remote_jid: string
+          tenant_id: string
+        }
+        Update: {
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          paused_at?: string
+          reason?: string | null
+          remote_jid?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

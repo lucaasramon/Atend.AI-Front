@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, LogOut, Zap, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/client/leads", label: "Leads", icon: Users },
+  { path: "/client/templates", label: "Templates", icon: FileText },
   { path: "/client/billing", label: "Pagamento", icon: CreditCard },
 ];
 
