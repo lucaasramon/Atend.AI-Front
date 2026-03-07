@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -12,11 +13,17 @@ const navItems = [
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Navbar */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-6">
@@ -45,15 +52,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild className="hidden md:flex">
-              <Link to="/login"><LogOut className="w-4 h-4 mr-1" /> Sair</Link>
+            <Button variant="ghost" size="sm" className="hidden md:flex" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-1" /> Sair
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
-        {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
             {navItems.map((item) => {
@@ -72,13 +78,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 </Link>
               );
             })}
-            <Link to="/login" className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>
+            <button onClick={() => { setMobileOpen(false); handleLogout(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground w-full">
               <LogOut className="w-4 h-4" /> Sair
-            </Link>
+            </button>
           </div>
         )}
       </nav>
-
       <main className="container mx-auto px-4 py-6">{children}</main>
     </div>
   );

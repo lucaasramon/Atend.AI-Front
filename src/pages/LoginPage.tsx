@@ -3,10 +3,11 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -25,22 +26,43 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: Integrate with Supabase auth
-    setTimeout(() => {
-      setLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+    } else {
       toast({ title: "Login realizado!", description: "Redirecionando para o painel..." });
       navigate("/client/dashboard");
-    }, 1000);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (signupPassword.length < 6) {
+      toast({ title: "Erro", description: "A senha deve ter no mínimo 6 caracteres", variant: "destructive" });
+      return;
+    }
     setLoading(true);
-    // TODO: Integrate with Supabase auth
-    setTimeout(() => {
-      setLoading(false);
+    const { error } = await supabase.auth.signUp({
+      email: signupEmail,
+      password: signupPassword,
+      options: {
+        data: {
+          full_name: signupName,
+          company: signupCompany,
+        },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
+    } else {
       toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
-    }, 1000);
+    }
   };
 
   return (
