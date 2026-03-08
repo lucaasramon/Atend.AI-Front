@@ -24,6 +24,8 @@ export default function LoginPage() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupCompany, setSignupCompany] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
 
   const redirectAfterAuth = () => {
     if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
