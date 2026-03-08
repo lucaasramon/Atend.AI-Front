@@ -68,7 +68,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "R$ 297",
+    price: "R$ 199",
     description: "Para negócios em crescimento",
     features: [
       "Até 3 números de WhatsApp",
