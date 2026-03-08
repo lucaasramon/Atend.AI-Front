@@ -191,6 +191,7 @@ export default function LoginPage() {
               </TabsContent>
             </CardContent>
           </Tabs>
+          )}
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
