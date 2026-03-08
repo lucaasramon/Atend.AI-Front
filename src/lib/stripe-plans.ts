@@ -16,7 +16,7 @@ export const STRIPE_PLANS = {
   business: {
     id: "business",
     name: "Business",
-    price: 497,
+    price: 499,
     price_id: "price_1T89XrGSbMQCs2fB8dKrIYMr",
     features: ["Números ilimitados", "Mensagens ilimitadas", "IA avançada + Base de conhecimento", "Gestão de Leads", "API + Integrações", "Suporte prioritário"],
   },
