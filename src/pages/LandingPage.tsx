@@ -55,7 +55,7 @@ const features = [
 const plans = [
   {
     name: "Starter",
-    price: "R$ 147",
+    price: "R$ 89",
     description: "Ideal para quem está começando",
     features: [
       "1 número de WhatsApp",
@@ -68,7 +68,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "R$ 297",
+    price: "R$ 199",
     description: "Para negócios em crescimento",
     features: [
       "Até 3 números de WhatsApp",
@@ -82,7 +82,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "R$ 497",
+    price: "R$ 499",
     description: "Para operações de alto volume",
     features: [
       "Números ilimitados",
