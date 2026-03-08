@@ -34,6 +34,15 @@ export default function ClientBilling() {
     }
   }, [searchParams]);
 
+  // Auto-checkout when coming from plan selection
+  useEffect(() => {
+    const autoCheckoutPlan = searchParams.get("auto_checkout") as PlanId | null;
+    if (autoCheckoutPlan && STRIPE_PLANS[autoCheckoutPlan] && !loading && !subscribed) {
+      setSearchParams({});
+      handleCheckout(STRIPE_PLANS[autoCheckoutPlan].price_id);
+    }
+  }, [loading, subscribed]);
+
   const currentPlan = planId as PlanId | null;
   const activePlan = currentPlan ? STRIPE_PLANS[currentPlan] : null;
 
