@@ -8,10 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PLANS, PlanId } from "@/lib/stripe-plans";
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
+  const selectedPlan = searchParams.get("plan") as PlanId | null;
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,6 +24,14 @@ export default function LoginPage() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupCompany, setSignupCompany] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const redirectAfterAuth = () => {
+    if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
+      navigate(`/client/billing?auto_checkout=${selectedPlan}`);
+    } else {
+      navigate("/client/dashboard");
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +44,8 @@ export default function LoginPage() {
     if (error) {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Login realizado!", description: "Redirecionando para o painel..." });
-      navigate("/client/dashboard");
+      toast({ title: "Login realizado!", description: "Redirecionando..." });
+      redirectAfterAuth();
     }
   };
 
@@ -46,7 +56,7 @@ export default function LoginPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: signupEmail,
       password: signupPassword,
       options: {
@@ -60,6 +70,10 @@ export default function LoginPage() {
     setLoading(false);
     if (error) {
       toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
+    } else if (data.session) {
+      // Auto-confirmed: user is logged in, redirect to checkout
+      toast({ title: "Conta criada!", description: "Redirecionando..." });
+      redirectAfterAuth();
     } else {
       toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
     }
@@ -103,6 +117,12 @@ export default function LoginPage() {
               </TabsContent>
               <TabsContent value="signup" className="mt-0">
                 <form onSubmit={handleSignup} className="space-y-4">
+                  {selectedPlan && STRIPE_PLANS[selectedPlan] && (
+                    <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
+                      <p className="text-sm text-muted-foreground">Plano selecionado</p>
+                      <p className="font-bold text-primary">{STRIPE_PLANS[selectedPlan].name} — R$ {STRIPE_PLANS[selectedPlan].price}/mês</p>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Nome completo</Label>
                     <Input id="signup-name" placeholder="Seu nome" value={signupName} onChange={(e) => setSignupName(e.target.value)} required />
@@ -120,7 +140,7 @@ export default function LoginPage() {
                     <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Criando..." : "Criar Conta Grátis"}
+                    {loading ? "Criando..." : selectedPlan ? `Criar Conta e Assinar` : "Criar Conta Grátis"}
                   </Button>
                 </form>
               </TabsContent>
