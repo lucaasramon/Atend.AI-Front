@@ -117,6 +117,12 @@ export default function LoginPage() {
               </TabsContent>
               <TabsContent value="signup" className="mt-0">
                 <form onSubmit={handleSignup} className="space-y-4">
+                  {selectedPlan && STRIPE_PLANS[selectedPlan] && (
+                    <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
+                      <p className="text-sm text-muted-foreground">Plano selecionado</p>
+                      <p className="font-bold text-primary">{STRIPE_PLANS[selectedPlan].name} — R$ {STRIPE_PLANS[selectedPlan].price}/mês</p>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Nome completo</Label>
                     <Input id="signup-name" placeholder="Seu nome" value={signupName} onChange={(e) => setSignupName(e.target.value)} required />
@@ -134,7 +140,7 @@ export default function LoginPage() {
                     <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Criando..." : "Criar Conta Grátis"}
+                    {loading ? "Criando..." : selectedPlan ? `Criar Conta e Assinar` : "Criar Conta Grátis"}
                   </Button>
                 </form>
               </TabsContent>
