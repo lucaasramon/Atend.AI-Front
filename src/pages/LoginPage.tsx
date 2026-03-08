@@ -110,6 +110,28 @@ export default function LoginPage() {
         </div>
 
         <Card>
+          {forgotMode ? (
+            <>
+              <CardHeader>
+                <h3 className="text-lg font-semibold">Esqueci minha senha</h3>
+                <p className="text-sm text-muted-foreground">Digite seu email para receber o link de recuperação.</p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <Input id="forgot-email" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Enviando..." : "Enviar link de recuperação"}
+                  </Button>
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setForgotMode(false)}>
+                    Voltar para o login
+                  </Button>
+                </form>
+              </CardContent>
+            </>
+          ) : (
           <Tabs defaultValue={defaultTab}>
             <CardHeader className="pb-3">
               <TabsList className="w-full">
@@ -127,6 +149,11 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Senha</Label>
                     <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                  </div>
+                  <div className="text-right">
+                    <button type="button" onClick={() => setForgotMode(true)} className="text-sm text-primary hover:underline">
+                      Esqueci minha senha
+                    </button>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Entrando..." : "Entrar"}
