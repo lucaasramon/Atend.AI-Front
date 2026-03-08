@@ -55,7 +55,7 @@ const features = [
 const plans = [
   {
     name: "Starter",
-    price: "R$ 147",
+    price: "R$ 89",
     description: "Ideal para quem está começando",
     features: [
       "1 número de WhatsApp",
