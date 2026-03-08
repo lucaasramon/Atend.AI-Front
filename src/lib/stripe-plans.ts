@@ -2,7 +2,7 @@ export const STRIPE_PLANS = {
   starter: {
     id: "starter",
     name: "Starter",
-    price: 147,
+    price: 89,
     price_id: "price_1T89WBGSbMQCs2fBEEJ5hVtR",
     features: ["1 número de WhatsApp", "Até 2.000 mensagens/mês", "Dashboard de atendimentos"],
   },
