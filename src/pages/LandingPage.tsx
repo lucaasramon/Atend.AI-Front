@@ -82,7 +82,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "R$ 497",
+    price: "R$ 499",
     description: "Para operações de alto volume",
     features: [
       "Números ilimitados",
