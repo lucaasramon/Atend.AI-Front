@@ -15,6 +15,7 @@ import Health from "@/pages/Health";
 import SettingsPage from "@/pages/SettingsPage";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
+import ResetPassword from "@/pages/ResetPassword";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
