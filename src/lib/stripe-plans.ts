@@ -9,7 +9,7 @@ export const STRIPE_PLANS = {
   pro: {
     id: "pro",
     name: "Pro",
-    price: 297,
+    price: 199,
     price_id: "price_1T89XTGSbMQCs2fB5vf5bT9R",
     features: ["Até 3 números de WhatsApp", "Até 10.000 mensagens/mês", "IA avançada + Base de conhecimento", "Gestão de Leads"],
   },
