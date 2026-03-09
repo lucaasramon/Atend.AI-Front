@@ -26,7 +26,46 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
+
+  useEffect(() => {
+    loadUnreadCount();
+
+    // Subscribe to changes in admin_notifications
+    const channel = supabase
+      .channel('admin_notifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'admin_notifications'
+        },
+        () => {
+          loadUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadUnreadCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from("admin_notifications")
+        .select("*", { count: 'exact', head: true })
+        .eq("read", false);
+
+      if (error) throw error;
+      setUnreadCount(count || 0);
+    } catch (error) {
+      console.error("Error loading unread count:", error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
