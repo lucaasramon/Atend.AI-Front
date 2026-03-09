@@ -21,6 +21,7 @@ import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
 import ClientTemplates from "@/pages/client/ClientTemplates";
 import ClientOnboarding from "@/pages/client/ClientOnboarding";
+import AdminNotifications from "@/pages/AdminNotifications";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
