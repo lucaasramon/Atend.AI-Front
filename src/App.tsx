@@ -20,6 +20,7 @@ import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
 import ClientTemplates from "@/pages/client/ClientTemplates";
+import ClientOnboarding from "@/pages/client/ClientOnboarding";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
