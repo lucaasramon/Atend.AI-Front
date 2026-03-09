@@ -10,7 +10,6 @@ import CompanyInfoStep from "@/components/onboarding/CompanyInfoStep";
 import WhatsAppSetupStep from "@/components/onboarding/WhatsAppSetupStep";
 import BotIntelligenceStep from "@/components/onboarding/BotIntelligenceStep";
 import KnowledgeBaseStep from "@/components/onboarding/KnowledgeBaseStep";
-import IntegrationsStep from "@/components/onboarding/IntegrationsStep";
 import OnboardingChoice from "@/components/onboarding/OnboardingChoice";
 
 const steps = [
@@ -18,7 +17,6 @@ const steps = [
   { id: "whatsapp_setup", label: "Conectar WhatsApp", description: "Configure seu número do WhatsApp" },
   { id: "bot_intelligence", label: "Inteligência do Robô", description: "Defina a personalidade do seu assistente" },
   { id: "knowledge_base", label: "Base de Conhecimento", description: "Adicione informações e FAQs" },
-  { id: "integrations", label: "Integrações", description: "Configure webhooks e automações" },
 ];
 
 export default function ClientOnboarding() {
