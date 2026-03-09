@@ -74,12 +74,22 @@ export default function ClientOnboarding() {
         [stepId]: { ...data, completed },
       };
 
+      // Only update specific profile fields that exist in the database
+      const profileUpdate: any = {
+        onboarding_data: updatedData,
+      };
+
+      // Add only valid profile fields
+      if (data.whatsapp_number) profileUpdate.whatsapp_number = data.whatsapp_number;
+      if (data.system_prompt) profileUpdate.system_prompt = data.system_prompt;
+      if (data.webhook_url) profileUpdate.webhook_url = data.webhook_url;
+      if (data.full_name) profileUpdate.full_name = data.full_name;
+      if (data.company) profileUpdate.company = data.company;
+      if (data.phone) profileUpdate.phone = data.phone;
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          onboarding_data: updatedData,
-          ...data, // Save specific fields like whatsapp_number, system_prompt, etc.
-        })
+        .update(profileUpdate)
         .eq("id", user.id);
 
       if (error) throw error;
