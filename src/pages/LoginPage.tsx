@@ -31,7 +31,7 @@ export default function LoginPage() {
     if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
       navigate(`/client/billing?auto_checkout=${selectedPlan}`);
     } else {
-      navigate("/client/dashboard");
+      navigate("/client/billing");
     }
   };
 
