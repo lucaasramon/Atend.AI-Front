@@ -84,7 +84,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: 'onboarding@resend.dev',
         to: 'lucaz_ramon@hotmail.com',
-        subject: `🤖 Nova Solicitação de Suporte - ${userName}`,
+        subject: subject,
         html: emailHtml,
       }),
     });

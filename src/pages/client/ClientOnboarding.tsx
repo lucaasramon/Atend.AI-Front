@@ -300,7 +300,6 @@ export default function ClientOnboarding() {
     WhatsAppSetupStep,
     BotIntelligenceStep,
     KnowledgeBaseStep,
-    IntegrationsStep,
   ][currentStep];
 
   return (
