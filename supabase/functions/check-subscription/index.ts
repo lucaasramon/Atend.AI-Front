@@ -65,8 +65,16 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      priceId = subscription.items.data[0].price.id;
+      try {
+        const endTimestamp = subscription.current_period_end;
+        logStep("Subscription end timestamp", { endTimestamp, type: typeof endTimestamp });
+        if (endTimestamp && typeof endTimestamp === "number") {
+          subscriptionEnd = new Date(endTimestamp * 1000).toISOString();
+        }
+      } catch (dateError) {
+        logStep("Date conversion error, skipping", { error: String(dateError) });
+      }
+      priceId = subscription.items.data[0]?.price?.id ?? null;
       logStep("Active subscription found", { priceId, subscriptionEnd });
     } else {
       logStep("No active subscription found");
