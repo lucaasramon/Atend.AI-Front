@@ -69,6 +69,7 @@ export type Database = {
           onboarding_data: Json | null
           phone: string | null
           plan: string
+          status: string
           system_prompt: string | null
           updated_at: string
           webhook_url: string | null
@@ -83,6 +84,7 @@ export type Database = {
           onboarding_data?: Json | null
           phone?: string | null
           plan?: string
+          status?: string
           system_prompt?: string | null
           updated_at?: string
           webhook_url?: string | null
@@ -97,6 +99,7 @@ export type Database = {
           onboarding_data?: Json | null
           phone?: string | null
           plan?: string
+          status?: string
           system_prompt?: string | null
           updated_at?: string
           webhook_url?: string | null
