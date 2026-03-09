@@ -127,26 +127,29 @@ export default function ClientOnboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Buscar dados do perfil para enviar no email
+      // Buscar dados do perfil
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      // Enviar email com os dados preenchidos
-      await supabase.functions.invoke('request-support', {
-        body: {
+      // Criar notificação para o admin
+      const { error: notificationError } = await supabase
+        .from("admin_notifications")
+        .insert({
+          user_id: user.id,
           type: 'onboarding_complete',
-          userEmail: user.email,
-          userName: profile?.full_name || 'Não informado',
+          user_email: user.email,
+          user_name: profile?.full_name || 'Não informado',
           company: profile?.company || 'Não informado',
           phone: profile?.phone || 'Não informado',
-          whatsappNumber: profile?.whatsapp_number || 'Não informado',
-          systemPrompt: profile?.system_prompt || 'Não configurado',
-          onboardingData: profile?.onboarding_data || {},
-        }
-      });
+          whatsapp_number: profile?.whatsapp_number || 'Não informado',
+          system_prompt: profile?.system_prompt || 'Não configurado',
+          onboarding_data: profile?.onboarding_data || {},
+        });
+
+      if (notificationError) throw notificationError;
 
       // Marcar onboarding como concluído
       const { error } = await supabase
@@ -217,18 +220,21 @@ export default function ClientOnboarding() {
         .eq("id", user.id)
         .single();
 
-      // Chamar edge function para enviar email
-      const { error } = await supabase.functions.invoke('request-support', {
-        body: {
-          userEmail: user.email,
-          userName: profile?.full_name || 'Não informado',
+      // Criar notificação de solicitação de suporte
+      const { error: notificationError } = await supabase
+        .from("admin_notifications")
+        .insert({
+          user_id: user.id,
+          type: 'support_request',
+          user_email: user.email,
+          user_name: profile?.full_name || 'Não informado',
           company: profile?.company || 'Não informado',
           phone: profile?.phone || 'Não informado',
-          whatsappNumber: profile?.whatsapp_number || 'Não informado',
-        }
-      });
+          whatsapp_number: profile?.whatsapp_number || 'Não informado',
+          onboarding_data: profile?.onboarding_data || {},
+        });
 
-      if (error) throw error;
+      if (notificationError) throw notificationError;
 
       // Salvar escolha
       const updatedData = {

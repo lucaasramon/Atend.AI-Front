@@ -21,6 +21,7 @@ import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
 import ClientTemplates from "@/pages/client/ClientTemplates";
 import ClientOnboarding from "@/pages/client/ClientOnboarding";
+import AdminNotifications from "@/pages/AdminNotifications";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />
             <Route path="/admin/clients" element={<AdminLayout><Clients /></AdminLayout>} />
             <Route path="/admin/clients/:id" element={<AdminLayout><ClientDetail /></AdminLayout>} />
+            <Route path="/admin/notifications" element={<AdminLayout><AdminNotifications /></AdminLayout>} />
             <Route path="/admin/automations" element={<AdminLayout><Automations /></AdminLayout>} />
             <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />

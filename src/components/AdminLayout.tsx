@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,11 +10,15 @@ import {
   ChevronRight,
   Zap,
   Shield,
+  Bell,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/clients", label: "Clientes", icon: Users },
+  { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: true },
   { path: "/admin/automations", label: "Automações", icon: Bot },
   { path: "/admin/health", label: "Saúde & Logs", icon: Activity },
   { path: "/admin/settings", label: "Configurações", icon: Settings },
@@ -22,7 +26,46 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
+
+  useEffect(() => {
+    loadUnreadCount();
+
+    // Subscribe to changes in admin_notifications
+    const channel = supabase
+      .channel('admin_notifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'admin_notifications'
+        },
+        () => {
+          loadUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadUnreadCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from("admin_notifications")
+        .select("*", { count: 'exact', head: true })
+        .eq("read", false);
+
+      if (error) throw error;
+      setUnreadCount(count || 0);
+    } catch (error) {
+      console.error("Error loading unread count:", error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -53,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors relative ${
                   active
                     ? "bg-sidebar-accent text-primary shadow-glow"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -61,6 +104,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <item.icon className="w-4 h-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
+                {item.badge && unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className={`${collapsed ? 'absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs' : 'ml-auto'}`}
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
               </Link>
             );
           })}
