@@ -16,25 +16,64 @@ serve(async (req) => {
       throw new Error('RESEND_API_KEY não está configurada');
     }
 
-    const { userEmail, userName, company, phone, whatsappNumber } = await req.json();
+    const { 
+      type = 'support_request',
+      userEmail, 
+      userName, 
+      company, 
+      phone, 
+      whatsappNumber,
+      systemPrompt = '',
+      onboardingData = {}
+    } = await req.json();
 
-    const emailHtml = `
-      <h2>Nova Solicitação de Suporte para Configuração de Robô</h2>
-      
-      <h3>Informações do Cliente:</h3>
-      <ul>
-        <li><strong>Nome:</strong> ${userName}</li>
-        <li><strong>Email:</strong> ${userEmail}</li>
-        <li><strong>Empresa:</strong> ${company}</li>
-        <li><strong>Telefone:</strong> ${phone}</li>
-        <li><strong>WhatsApp:</strong> ${whatsappNumber}</li>
-      </ul>
-      
-      <p><strong>Data da Solicitação:</strong> ${new Date().toLocaleString('pt-BR')}</p>
-      
-      <hr />
-      <p>O cliente solicitou suporte para configuração do robô de WhatsApp. Entre em contato o mais breve possível.</p>
-    `;
+    const isOnboardingComplete = type === 'onboarding_complete';
+
+    const emailHtml = isOnboardingComplete 
+      ? `
+        <h2>✅ Onboarding Concluído - Cliente Configurou Robô</h2>
+        
+        <h3>Informações do Cliente:</h3>
+        <ul>
+          <li><strong>Nome:</strong> ${userName}</li>
+          <li><strong>Email:</strong> ${userEmail}</li>
+          <li><strong>Empresa:</strong> ${company}</li>
+          <li><strong>Telefone:</strong> ${phone}</li>
+          <li><strong>WhatsApp:</strong> ${whatsappNumber}</li>
+        </ul>
+        
+        <h3>Dados Configurados:</h3>
+        <ul>
+          <li><strong>System Prompt:</strong> ${systemPrompt || 'Não configurado'}</li>
+          <li><strong>Base de Conhecimento:</strong> ${onboardingData.knowledge_base?.completed ? 'Configurada' : 'Não configurada'}</li>
+        </ul>
+        
+        <p><strong>Data da Conclusão:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+        
+        <hr />
+        <p>O cliente completou todas as etapas de configuração. Entre em contato para finalizar a configuração do robô (webhooks e integrações).</p>
+      `
+      : `
+        <h2>🆘 Nova Solicitação de Suporte para Configuração de Robô</h2>
+        
+        <h3>Informações do Cliente:</h3>
+        <ul>
+          <li><strong>Nome:</strong> ${userName}</li>
+          <li><strong>Email:</strong> ${userEmail}</li>
+          <li><strong>Empresa:</strong> ${company}</li>
+          <li><strong>Telefone:</strong> ${phone}</li>
+          <li><strong>WhatsApp:</strong> ${whatsappNumber}</li>
+        </ul>
+        
+        <p><strong>Data da Solicitação:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+        
+        <hr />
+        <p>O cliente solicitou suporte completo para configuração do robô de WhatsApp. Entre em contato o mais breve possível.</p>
+      `;
+
+    const subject = isOnboardingComplete
+      ? `✅ Onboarding Concluído - ${userName}`
+      : `🆘 Nova Solicitação de Suporte - ${userName}`;
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -45,7 +84,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: 'onboarding@resend.dev',
         to: 'lucaz_ramon@hotmail.com',
-        subject: `🤖 Nova Solicitação de Suporte - ${userName}`,
+        subject: subject,
         html: emailHtml,
       }),
     });
