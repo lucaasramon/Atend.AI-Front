@@ -136,7 +136,7 @@ export default function LoginPage() {
             <CardHeader className="pb-3">
               <TabsList className="w-full">
                 <TabsTrigger value="login" className="flex-1">Entrar</TabsTrigger>
-                <TabsTrigger value="signup" className="flex-1">Criar Conta</TabsTrigger>
+                <TabsTrigger value="signup" className="flex-1" disabled={!selectedPlan}>Criar Conta</TabsTrigger>
               </TabsList>
             </CardHeader>
             <CardContent>
