@@ -69,10 +69,21 @@ export default function LoginPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedPlan) {
+      toast({ 
+        title: "Selecione um plano", 
+        description: "Por favor, selecione um plano antes de criar sua conta.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     if (signupPassword.length < 6) {
       toast({ title: "Erro", description: "A senha deve ter no mínimo 6 caracteres", variant: "destructive" });
       return;
     }
+    
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email: signupEmail,
@@ -86,14 +97,32 @@ export default function LoginPage() {
       },
     });
     setLoading(false);
+    
     if (error) {
       toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
-    } else if (data.session) {
-      // Auto-confirmed: user is logged in, redirect to checkout
-      toast({ title: "Conta criada!", description: "Redirecionando..." });
-      redirectAfterAuth();
-    } else {
-      toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
+    } else if (data.user) {
+      // Create profile with selected plan and onboarding not completed
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: data.user.id,
+          full_name: signupName,
+          company: signupCompany,
+          plan: selectedPlan,
+          onboarding_completed: false,
+        });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+      }
+
+      if (data.session) {
+        // Auto-confirmed: user is logged in, redirect to checkout
+        toast({ title: "Conta criada!", description: "Redirecionando..." });
+        redirectAfterAuth();
+      } else {
+        toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
+      }
     }
   };
 
