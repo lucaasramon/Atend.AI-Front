@@ -136,7 +136,7 @@ export default function LoginPage() {
             <CardHeader className="pb-3">
               <TabsList className="w-full">
                 <TabsTrigger value="login" className="flex-1">Entrar</TabsTrigger>
-                <TabsTrigger value="signup" className="flex-1">Criar Conta</TabsTrigger>
+                <TabsTrigger value="signup" className="flex-1" disabled={!selectedPlan}>Criar Conta</TabsTrigger>
               </TabsList>
             </CardHeader>
             <CardContent>
@@ -161,6 +161,13 @@ export default function LoginPage() {
                 </form>
               </TabsContent>
               <TabsContent value="signup" className="mt-0">
+                {!selectedPlan && (
+                  <div className="mb-4 p-4 rounded-lg bg-muted border border-border">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Para criar uma conta, você precisa <Link to="/" className="text-primary font-semibold hover:underline">selecionar um plano</Link> primeiro.
+                    </p>
+                  </div>
+                )}
                 <form onSubmit={handleSignup} className="space-y-4">
                   {selectedPlan && STRIPE_PLANS[selectedPlan] && (
                     <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
@@ -184,8 +191,8 @@ export default function LoginPage() {
                     <Label htmlFor="signup-password">Senha</Label>
                     <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Criando..." : selectedPlan ? `Criar Conta e Assinar` : "Criar Conta Grátis"}
+                  <Button type="submit" className="w-full" disabled={loading || !selectedPlan}>
+                    {loading ? "Criando..." : `Criar Conta e Assinar ${selectedPlan ? STRIPE_PLANS[selectedPlan].name : ""}`}
                   </Button>
                 </form>
               </TabsContent>
