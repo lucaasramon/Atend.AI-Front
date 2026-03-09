@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,11 +10,15 @@ import {
   ChevronRight,
   Zap,
   Shield,
+  Bell,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/clients", label: "Clientes", icon: Users },
+  { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: true },
   { path: "/admin/automations", label: "Automações", icon: Bot },
   { path: "/admin/health", label: "Saúde & Logs", icon: Activity },
   { path: "/admin/settings", label: "Configurações", icon: Settings },
