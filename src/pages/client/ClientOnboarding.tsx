@@ -11,6 +11,7 @@ import WhatsAppSetupStep from "@/components/onboarding/WhatsAppSetupStep";
 import BotIntelligenceStep from "@/components/onboarding/BotIntelligenceStep";
 import KnowledgeBaseStep from "@/components/onboarding/KnowledgeBaseStep";
 import IntegrationsStep from "@/components/onboarding/IntegrationsStep";
+import OnboardingChoice from "@/components/onboarding/OnboardingChoice";
 
 const steps = [
   { id: "company_info", label: "Dados da Empresa", description: "Informações básicas do seu negócio" },
@@ -21,10 +22,12 @@ const steps = [
 ];
 
 export default function ClientOnboarding() {
+  const [showChoice, setShowChoice] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [requestingSupport, setRequestingSupport] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,6 +51,11 @@ export default function ClientOnboarding() {
       if (data?.onboarding_completed) {
         navigate("/client/dashboard");
         return;
+      }
+
+      // Se já escolheu antes, não mostrar a escolha novamente
+      if (data?.onboarding_data?.choice_made) {
+        setShowChoice(false);
       }
 
       setOnboardingData(data?.onboarding_data || {});
@@ -146,6 +154,94 @@ export default function ClientOnboarding() {
     }
   };
 
+  const handleChoice = async (choice: 'self' | 'support') => {
+    if (choice === 'self') {
+      // Salvar escolha e continuar com onboarding normal
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const updatedData = {
+          ...onboardingData,
+          choice_made: true,
+          choice: 'self'
+        };
+
+        const { error } = await supabase
+          .from("profiles")
+          .update({ onboarding_data: updatedData })
+          .eq("id", user.id);
+
+        if (!error) {
+          setOnboardingData(updatedData);
+          setShowChoice(false);
+        }
+      } catch (error) {
+        console.error("Error saving choice:", error);
+      }
+    } else {
+      // Solicitar suporte
+      await requestSupport();
+    }
+  };
+
+  const requestSupport = async () => {
+    setRequestingSupport(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      // Chamar edge function para enviar email
+      const { error } = await supabase.functions.invoke('request-support', {
+        body: {
+          userEmail: user.email,
+          userName: profile?.full_name || 'Não informado',
+          company: profile?.company || 'Não informado',
+          phone: profile?.phone || 'Não informado',
+          whatsappNumber: profile?.whatsapp_number || 'Não informado',
+        }
+      });
+
+      if (error) throw error;
+
+      // Salvar escolha
+      const updatedData = {
+        ...onboardingData,
+        choice_made: true,
+        choice: 'support',
+        support_requested: true,
+        support_requested_at: new Date().toISOString()
+      };
+
+      await supabase
+        .from("profiles")
+        .update({ onboarding_data: updatedData })
+        .eq("id", user.id);
+
+      toast({
+        title: "Solicitação enviada! 🎉",
+        description: "Em breve entraremos em contato para configurar seu robô.",
+      });
+
+      setTimeout(() => navigate("/client/dashboard"), 2000);
+    } catch (error) {
+      console.error("Error requesting support:", error);
+      toast({
+        title: "Erro ao enviar solicitação",
+        description: "Tente novamente ou entre em contato diretamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setRequestingSupport(false);
+    }
+  };
+
   const handleNext = async () => {
     const stepId = steps[currentStep].id;
     const stepData = onboardingData[stepId];
@@ -182,6 +278,21 @@ export default function ClientOnboarding() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (showChoice) {
+    return <OnboardingChoice onChoose={handleChoice} />;
+  }
+
+  if (requestingSupport) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+          <p className="text-lg text-muted-foreground">Enviando solicitação de suporte...</p>
+        </div>
       </div>
     );
   }
