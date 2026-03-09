@@ -1,7 +1,22 @@
-import { AlertTriangle, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertTriangle, CheckCircle2, XCircle, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
-import { mockErrorLogs } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface RobotInterruption {
+  id: string;
+  tenant_id: string;
+  remote_jid: string;
+  paused_at: string;
+  reason: string | null;
+  is_active: boolean;
+  contact_name: string | null;
+  created_at: string;
+  created_by: string | null;
+}
 
 const services = [
   { name: "n8n Server", status: "online" as const, latency: "45ms", uptime: "99.8%" },
@@ -11,6 +26,31 @@ const services = [
 ];
 
 export default function Health() {
+  const [interruptions, setInterruptions] = useState<RobotInterruption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadInterruptions();
+  }, []);
+
+  const loadInterruptions = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("robot_interruptions")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setInterruptions(data || []);
+    } catch (error) {
+      console.error("Error loading interruptions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -18,8 +58,9 @@ export default function Health() {
           <h1 className="text-2xl font-semibold text-foreground">Saúde & Logs</h1>
           <p className="text-sm text-muted-foreground mt-1">Monitoramento da infraestrutura</p>
         </div>
-        <Button variant="outline" size="sm">
-          <RefreshCw className="w-4 h-4 mr-2" />Atualizar
+        <Button variant="outline" size="sm" onClick={loadInterruptions} disabled={loading}>
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+          Atualizar
         </Button>
       </div>
 
@@ -45,29 +86,56 @@ export default function Health() {
         ))}
       </div>
 
-      {/* Logs */}
+      {/* Robot Interruptions Log */}
       <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-warning" />
-          <h2 className="text-sm font-medium text-card-foreground">Log de Erros</h2>
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
+            <h2 className="text-sm font-medium text-card-foreground">Interrupções de Robô</h2>
+          </div>
+          <span className="text-xs text-muted-foreground">{interruptions.length} registros</span>
         </div>
-        <div className="divide-y divide-border/50">
-          {mockErrorLogs.map((log) => (
-            <div key={log.id} className="px-5 py-3 hover:bg-muted/20 transition-colors flex items-center gap-4">
-              <div className={`w-2 h-2 rounded-full shrink-0 ${log.severity === "danger" ? "bg-destructive" : "bg-warning"}`} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-primary">{log.type}</span>
-                  <span className="text-xs text-muted-foreground">·</span>
-                  <span className="text-xs text-muted-foreground">{log.client}</span>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : interruptions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <CheckCircle2 className="w-10 h-10 text-success mb-3" />
+            <p className="text-sm">Nenhuma interrupção registrada</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {interruptions.map((item) => (
+              <div key={item.id} className="px-5 py-3 hover:bg-muted/20 transition-colors flex items-center gap-4">
+                <div className={`w-2 h-2 rounded-full shrink-0 ${item.is_active ? "bg-warning" : "bg-muted-foreground"}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-primary truncate">{item.remote_jid}</span>
+                    {item.contact_name && (
+                      <>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs text-muted-foreground">{item.contact_name}</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-sm text-card-foreground truncate">
+                    {item.reason || "Interrupção manual"} · por {item.created_by || "sistema"}
+                  </p>
                 </div>
-                <p className="text-sm text-card-foreground truncate">{log.message}</p>
+                <div className="text-right shrink-0">
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {format(new Date(item.created_at), "dd/MM HH:mm", { locale: ptBR })}
+                  </p>
+                  <StatusBadge
+                    status={item.is_active ? "warning" : "offline"}
+                    label={item.is_active ? "Ativo" : "Encerrado"}
+                  />
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground font-mono shrink-0">{log.timestamp}</span>
-              <StatusBadge status={log.severity === "danger" ? "blocked" : "warning"} label={log.severity === "danger" ? "Crítico" : "Alerta"} />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
