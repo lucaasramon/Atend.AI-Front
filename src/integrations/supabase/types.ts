@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          company: string | null
+          created_at: string
+          id: string
+          onboarding_data: Json | null
+          phone: string | null
+          read: boolean
+          system_prompt: string | null
+          type: string
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          id?: string
+          onboarding_data?: Json | null
+          phone?: string | null
+          read?: boolean
+          system_prompt?: string | null
+          type?: string
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          id?: string
+          onboarding_data?: Json | null
+          phone?: string | null
+          read?: boolean
+          system_prompt?: string | null
+          type?: string
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
