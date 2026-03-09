@@ -20,27 +20,42 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          onboarding_completed: boolean
+          onboarding_data: Json | null
           phone: string | null
           plan: string
+          system_prompt: string | null
           updated_at: string
+          webhook_url: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           company?: string | null
           created_at?: string
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean
+          onboarding_data?: Json | null
           phone?: string | null
           plan?: string
+          system_prompt?: string | null
           updated_at?: string
+          webhook_url?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           company?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean
+          onboarding_data?: Json | null
           phone?: string | null
           plan?: string
+          system_prompt?: string | null
           updated_at?: string
+          webhook_url?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
