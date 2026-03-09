@@ -220,18 +220,21 @@ export default function ClientOnboarding() {
         .eq("id", user.id)
         .single();
 
-      // Chamar edge function para enviar email
-      const { error } = await supabase.functions.invoke('request-support', {
-        body: {
-          userEmail: user.email,
-          userName: profile?.full_name || 'Não informado',
+      // Criar notificação de solicitação de suporte
+      const { error: notificationError } = await supabase
+        .from("admin_notifications")
+        .insert({
+          user_id: user.id,
+          type: 'support_request',
+          user_email: user.email,
+          user_name: profile?.full_name || 'Não informado',
           company: profile?.company || 'Não informado',
           phone: profile?.phone || 'Não informado',
-          whatsappNumber: profile?.whatsapp_number || 'Não informado',
-        }
-      });
+          whatsapp_number: profile?.whatsapp_number || 'Não informado',
+          onboarding_data: profile?.onboarding_data || {},
+        });
 
-      if (error) throw error;
+      if (notificationError) throw notificationError;
 
       // Salvar escolha
       const updatedData = {

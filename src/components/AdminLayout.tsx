@@ -96,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors relative ${
                   active
                     ? "bg-sidebar-accent text-primary shadow-glow"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -104,6 +104,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <item.icon className="w-4 h-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
+                {item.badge && unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className={`${collapsed ? 'absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs' : 'ml-auto'}`}
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
               </Link>
             );
           })}

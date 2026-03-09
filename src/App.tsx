@@ -50,6 +50,7 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />
             <Route path="/admin/clients" element={<AdminLayout><Clients /></AdminLayout>} />
             <Route path="/admin/clients/:id" element={<AdminLayout><ClientDetail /></AdminLayout>} />
+            <Route path="/admin/notifications" element={<AdminLayout><AdminNotifications /></AdminLayout>} />
             <Route path="/admin/automations" element={<AdminLayout><Automations /></AdminLayout>} />
             <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
