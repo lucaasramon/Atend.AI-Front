@@ -127,6 +127,28 @@ export default function ClientOnboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Buscar dados do perfil para enviar no email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      // Enviar email com os dados preenchidos
+      await supabase.functions.invoke('request-support', {
+        body: {
+          type: 'onboarding_complete',
+          userEmail: user.email,
+          userName: profile?.full_name || 'Não informado',
+          company: profile?.company || 'Não informado',
+          phone: profile?.phone || 'Não informado',
+          whatsappNumber: profile?.whatsapp_number || 'Não informado',
+          systemPrompt: profile?.system_prompt || 'Não configurado',
+          onboardingData: profile?.onboarding_data || {},
+        }
+      });
+
+      // Marcar onboarding como concluído
       const { error } = await supabase
         .from("profiles")
         .update({ onboarding_completed: true })
@@ -135,11 +157,11 @@ export default function ClientOnboarding() {
       if (error) throw error;
 
       toast({
-        title: "Parabéns! 🎉",
-        description: "Seu robô está configurado e pronto para uso!",
+        title: "Configuração concluída! ✅",
+        description: "Nosso suporte entrará em contato em breve para finalizar a configuração do seu robô.",
       });
 
-      setTimeout(() => navigate("/client/dashboard"), 1500);
+      setTimeout(() => navigate("/client/dashboard"), 2000);
     } catch (error) {
       console.error("Error completing onboarding:", error);
       toast({
