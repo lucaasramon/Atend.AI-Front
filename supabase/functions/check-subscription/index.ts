@@ -80,10 +80,48 @@ serve(async (req) => {
       logStep("No active subscription found");
     }
 
+    // Get default payment method info
+    let cardInfo = null;
+    try {
+      const customer = customers.data[0];
+      const defaultPmId = customer.invoice_settings?.default_payment_method;
+      if (defaultPmId) {
+        const pm = await stripe.paymentMethods.retrieve(defaultPmId as string);
+        if (pm.card) {
+          cardInfo = {
+            brand: pm.card.brand,
+            last4: pm.card.last4,
+            exp_month: pm.card.exp_month,
+            exp_year: pm.card.exp_year,
+          };
+        }
+      } else {
+        // Try to get from subscriptions default payment method
+        if (hasActiveSub) {
+          const subPmId = subscriptions.data[0].default_payment_method;
+          if (subPmId) {
+            const pm = await stripe.paymentMethods.retrieve(subPmId as string);
+            if (pm.card) {
+              cardInfo = {
+                brand: pm.card.brand,
+                last4: pm.card.last4,
+                exp_month: pm.card.exp_month,
+                exp_year: pm.card.exp_year,
+              };
+            }
+          }
+        }
+      }
+      logStep("Card info retrieved", cardInfo);
+    } catch (cardError) {
+      logStep("Could not retrieve card info", { error: String(cardError) });
+    }
+
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       price_id: priceId,
       subscription_end: subscriptionEnd,
+      card_info: cardInfo,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
