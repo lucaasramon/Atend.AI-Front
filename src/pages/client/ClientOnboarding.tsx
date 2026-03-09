@@ -54,7 +54,7 @@ export default function ClientOnboarding() {
       }
 
       // Se já escolheu antes, não mostrar a escolha novamente
-      if (data?.onboarding_data?.choice_made) {
+      if (data?.onboarding_data && typeof data.onboarding_data === 'object' && 'choice_made' in data.onboarding_data) {
         setShowChoice(false);
       }
 
