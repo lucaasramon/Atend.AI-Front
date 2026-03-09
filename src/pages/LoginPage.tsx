@@ -161,6 +161,13 @@ export default function LoginPage() {
                 </form>
               </TabsContent>
               <TabsContent value="signup" className="mt-0">
+                {!selectedPlan && (
+                  <div className="mb-4 p-4 rounded-lg bg-muted border border-border">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Para criar uma conta, você precisa <Link to="/" className="text-primary font-semibold hover:underline">selecionar um plano</Link> primeiro.
+                    </p>
+                  </div>
+                )}
                 <form onSubmit={handleSignup} className="space-y-4">
                   {selectedPlan && STRIPE_PLANS[selectedPlan] && (
                     <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
