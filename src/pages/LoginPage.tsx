@@ -191,8 +191,8 @@ export default function LoginPage() {
                     <Label htmlFor="signup-password">Senha</Label>
                     <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Criando..." : selectedPlan ? `Criar Conta e Assinar` : "Criar Conta Grátis"}
+                  <Button type="submit" className="w-full" disabled={loading || !selectedPlan}>
+                    {loading ? "Criando..." : `Criar Conta e Assinar ${selectedPlan ? STRIPE_PLANS[selectedPlan].name : ""}`}
                   </Button>
                 </form>
               </TabsContent>
