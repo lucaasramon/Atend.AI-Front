@@ -86,8 +86,11 @@ export default function ClientLeads() {
   const loadData = async () => {
     if (!user) return;
     try {
+      const { count } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("tenant_id", user.id);
+      setTotal(count || 0);
+
       const [leadsRes, intRes] = await Promise.all([
-        supabase.from("leads").select("*").eq("tenant_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("leads").select("*").eq("tenant_id", user.id).order("created_at", { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
         supabase.from("robot_interruptions").select("id, remote_jid, is_active, expires_at, reason").eq("tenant_id", user.id).eq("is_active", true),
       ]);
       setLeads((leadsRes.data as any[] || []).map(l => ({ ...l, saved: l.saved ?? false })));
