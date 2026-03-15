@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Search, Download, Star, StarOff, MessageSquare, PauseCircle, PlayCircle, AlertTriangle, Bot, UserRound } from "lucide-react";
+import { Search, Download, Star, StarOff, MessageSquare, PauseCircle, PlayCircle, AlertTriangle, Bot, UserRound, Lock, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanFeatures } from "@/hooks/use-plan-features";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
