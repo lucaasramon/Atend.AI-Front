@@ -92,6 +92,7 @@ export default function LoginPage() {
         data: {
           full_name: signupName,
           company: signupCompany,
+          plan: selectedPlan,
         },
         emailRedirectTo: window.location.origin,
       },
@@ -101,23 +102,7 @@ export default function LoginPage() {
     if (error) {
       toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
     } else if (data.user) {
-      // Create profile with selected plan and onboarding not completed
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          full_name: signupName,
-          company: signupCompany,
-          plan: selectedPlan,
-          onboarding_completed: false,
-        });
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-      }
-
       if (data.session) {
-        // Auto-confirmed: user is logged in, redirect to checkout
         toast({ title: "Conta criada!", description: "Redirecionando..." });
         redirectAfterAuth();
       } else {
