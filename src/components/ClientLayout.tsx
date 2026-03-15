@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
