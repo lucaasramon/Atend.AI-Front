@@ -81,7 +81,7 @@ export default function ClientLeads() {
   useEffect(() => {
     if (!user) return;
     loadData();
-  }, [user]);
+  }, [user, page]);
 
   const loadData = async () => {
     if (!user) return;
