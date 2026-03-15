@@ -38,7 +38,7 @@ const PLAN_VALUES: Record<string, number> = {
 interface NewClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onClientCreated: (client: Client) => void;
+  onClientCreated: () => void;
 }
 
 export default function NewClientDialog({ open, onOpenChange, onClientCreated }: NewClientDialogProps) {
