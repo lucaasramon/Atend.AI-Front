@@ -19,6 +19,7 @@ import AuditLogs from "@/pages/AuditLogs";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import ResetPassword from "@/pages/ResetPassword";
+import EmailConfirmed from "@/pages/EmailConfirmed";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
