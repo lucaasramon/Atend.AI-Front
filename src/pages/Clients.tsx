@@ -7,7 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NewClientDialog from "@/components/NewClientDialog";
-import { Client } from "@/data/mockData";
+
 
 interface Profile {
   id: string;
