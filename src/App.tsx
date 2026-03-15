@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminProtectedRoute from "@/components/AdminProtectedRoute";
+import AdminLayout from "@/components/AdminLayout";
 import ClientLayout from "@/components/ClientLayout";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
