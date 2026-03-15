@@ -84,9 +84,7 @@ export default function Clients() {
       (p.whatsapp_number || "").includes(search)
   );
 
-  // NewClientDialog still uses mock Client type for local state after creation
-  const handleClientCreated = (client: Client) => {
-    // Refresh from DB to show real data
+  const handleClientCreated = () => {
     loadProfiles();
   };
 
