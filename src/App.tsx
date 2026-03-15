@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import AdminLayout from "@/components/AdminLayout";
 import ClientLayout from "@/components/ClientLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -47,13 +48,13 @@ const App = () => (
             <Route path="/client/templates" element={<ProtectedRoute><ClientLayout><ClientTemplates /></ClientLayout></ProtectedRoute>} />
 
             {/* Admin */}
-            <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />
-            <Route path="/admin/clients" element={<AdminLayout><Clients /></AdminLayout>} />
-            <Route path="/admin/clients/:id" element={<AdminLayout><ClientDetail /></AdminLayout>} />
-            <Route path="/admin/notifications" element={<AdminLayout><AdminNotifications /></AdminLayout>} />
-            <Route path="/admin/automations" element={<AdminLayout><Automations /></AdminLayout>} />
-            <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
-            <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
+            <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />
+            <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} />
+            <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} />
+            <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminLayout><AdminNotifications /></AdminLayout></AdminProtectedRoute>} />
+            <Route path="/admin/automations" element={<AdminProtectedRoute><AdminLayout><Automations /></AdminLayout></AdminProtectedRoute>} />
+            <Route path="/admin/health" element={<AdminProtectedRoute><AdminLayout><Health /></AdminLayout></AdminProtectedRoute>} />
+            <Route path="/admin/settings" element={<AdminProtectedRoute><AdminLayout><SettingsPage /></AdminLayout></AdminProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
