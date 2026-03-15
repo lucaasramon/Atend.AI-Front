@@ -62,7 +62,7 @@ export default function LoginPage() {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Login realizado!", description: "Redirecionando..." });
-      redirectAfterAuth();
+      await redirectAfterAuth();
     }
   };
 
