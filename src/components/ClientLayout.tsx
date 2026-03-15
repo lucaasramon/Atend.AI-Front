@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlanFeatures } from "@/hooks/use-plan-features";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
-  { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/client/leads", label: "Leads", icon: Users },
-  { path: "/client/templates", label: "Templates", icon: FileText },
-  { path: "/client/billing", label: "Pagamento", icon: CreditCard },
+  { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard, requiredFeature: null },
+  { path: "/client/leads", label: "Leads", icon: Users, requiredFeature: "canAccessLeads" as const },
+  { path: "/client/templates", label: "Templates", icon: FileText, requiredFeature: null },
+  { path: "/client/billing", label: "Pagamento", icon: CreditCard, requiredFeature: null },
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -16,10 +18,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { signOut } = useAuth();
+  const features = usePlanFeatures();
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const isFeatureLocked = (requiredFeature: string | null) => {
+    if (!requiredFeature || features.loading) return false;
+    return !(features as any)[requiredFeature];
   };
 
   return (
@@ -36,6 +44,27 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const active = location.pathname === item.path;
+                const locked = isFeatureLocked(item.requiredFeature);
+
+                if (locked) {
+                  return (
+                    <Tooltip key={item.path}>
+                      <TooltipTrigger asChild>
+                        <span
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground/50 cursor-not-allowed"
+                        >
+                          <item.icon className="w-4 h-4" />
+                          {item.label}
+                          <Lock className="w-3 h-3" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Disponível no plano Pro ou superior</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.path}
@@ -64,17 +93,26 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
             {navItems.map((item) => {
               const active = location.pathname === item.path;
+              const locked = isFeatureLocked(item.requiredFeature);
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
+                  to={locked ? "#" : item.path}
+                  onClick={(e) => {
+                    if (locked) e.preventDefault();
+                    else setMobileOpen(false);
+                  }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
-                    active ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
+                    locked
+                      ? "text-muted-foreground/50 cursor-not-allowed"
+                      : active
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground"
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
                   {item.label}
+                  {locked && <Lock className="w-3 h-3 ml-auto" />}
                 </Link>
               );
             })}

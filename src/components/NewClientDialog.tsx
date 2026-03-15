@@ -415,9 +415,9 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                     Próximo
                   </Button>
                 ) : (
-                  <Button type="submit" size="sm" className="gradient-primary text-primary-foreground border-0 shadow-glow">
-                    <Zap className="w-3.5 h-3.5 mr-1.5" />
-                    Criar Cliente e Automação
+                  <Button type="submit" size="sm" className="gradient-primary text-primary-foreground border-0 shadow-glow" disabled={submitting}>
+                    {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 mr-1.5" />}
+                    {submitting ? "Criando..." : "Criar Cliente e Automação"}
                   </Button>
                 )}
               </div>
