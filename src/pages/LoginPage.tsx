@@ -27,7 +27,22 @@ export default function LoginPage() {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
 
-  const redirectAfterAuth = () => {
+  const redirectAfterAuth = async () => {
+    // Check if user is admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin");
+
+      if (roles && roles.length > 0) {
+        navigate("/admin");
+        return;
+      }
+    }
+
     if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
       navigate(`/client/billing?auto_checkout=${selectedPlan}`);
     } else {
@@ -47,7 +62,7 @@ export default function LoginPage() {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Login realizado!", description: "Redirecionando..." });
-      redirectAfterAuth();
+      await redirectAfterAuth();
     }
   };
 
@@ -104,7 +119,7 @@ export default function LoginPage() {
     } else if (data.user) {
       if (data.session) {
         toast({ title: "Conta criada!", description: "Redirecionando..." });
-        redirectAfterAuth();
+        await redirectAfterAuth();
       } else {
         toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
       }
