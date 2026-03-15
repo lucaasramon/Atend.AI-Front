@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Power, Eye, Loader2 } from "lucide-react";
+import { Plus, Search, Power, Eye, Loader2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusBadge from "@/components/StatusBadge";
+import Pagination from "@/components/Pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NewClientDialog from "@/components/NewClientDialog";
-
+import { logAudit } from "@/lib/audit";
 
 interface Profile {
   id: string;
@@ -21,24 +23,46 @@ interface Profile {
   created_at: string;
 }
 
+const PAGE_SIZE = 15;
+
 export default function Clients() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     loadProfiles();
-  }, []);
+  }, [page, planFilter, statusFilter]);
 
   const loadProfiles = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, company, plan, phone, whatsapp_number, status, onboarding_completed, created_at", { count: "exact" });
+
+      if (planFilter !== "all") query = query.eq("plan", planFilter);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+
+      const { count } = await query;
+      setTotal(count || 0);
+
+      let dataQuery = supabase
         .from("profiles")
         .select("id, full_name, company, plan, phone, whatsapp_number, status, onboarding_completed, created_at")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
+      if (planFilter !== "all") dataQuery = dataQuery.eq("plan", planFilter);
+      if (statusFilter !== "all") dataQuery = dataQuery.eq("status", statusFilter);
+
+      const { data, error } = await dataQuery;
       if (error) throw error;
       setProfiles((data || []) as Profile[]);
     } catch (error) {
@@ -50,7 +74,7 @@ export default function Clients() {
   };
 
   const toggleStatus = async (profile: Profile) => {
-    const newStatus = (profile as any).status === "blocked" ? "active" : "blocked";
+    const newStatus = profile.status === "blocked" ? "active" : "blocked";
     const action = newStatus === "blocked" ? "bloquear" : "reativar";
     if (!window.confirm(`Tem certeza que deseja ${action} ${profile.company || profile.full_name}?`)) return;
     setTogglingId(profile.id);
@@ -64,6 +88,13 @@ export default function Clients() {
 
       setProfiles((prev) =>
         prev.map((p) => (p.id === profile.id ? { ...p, status: newStatus } : p))
+      );
+
+      await logAudit(
+        newStatus === "blocked" ? "client_blocked" : "client_unblocked",
+        "profile",
+        profile.id,
+        { company: profile.company, name: profile.full_name }
       );
 
       if (newStatus === "blocked") {
@@ -90,12 +121,14 @@ export default function Clients() {
     loadProfiles();
   };
 
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Clientes</h1>
-          <p className="text-sm text-muted-foreground mt-1">{profiles.length} cadastrados</p>
+          <p className="text-sm text-muted-foreground mt-1">{total} cadastrados</p>
         </div>
         <Button onClick={() => setDialogOpen(true)} className="gradient-primary text-primary-foreground border-0 shadow-glow">
           <Plus className="w-4 h-4 mr-2" />
@@ -103,15 +136,41 @@ export default function Clients() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por empresa, nome ou WhatsApp..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-card border-border"
-        />
+      {/* Search + Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por empresa, nome ou WhatsApp..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 bg-card border-border"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={planFilter} onValueChange={(v) => { setPlanFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-[130px] bg-card border-border">
+              <Filter className="w-3 h-3 mr-1" />
+              <SelectValue placeholder="Plano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos planos</SelectItem>
+              <SelectItem value="starter">Starter</SelectItem>
+              <SelectItem value="pro">Pro</SelectItem>
+              <SelectItem value="enterprise">Enterprise</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-[130px] bg-card border-border">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos status</SelectItem>
+              <SelectItem value="active">Ativo</SelectItem>
+              <SelectItem value="blocked">Bloqueado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
@@ -141,7 +200,7 @@ export default function Clients() {
             </thead>
             <tbody>
               {filtered.map((profile) => {
-                const isBlocked = (profile as any).status === "blocked";
+                const isBlocked = profile.status === "blocked";
                 return (
                   <tr key={profile.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                     <td className="px-5 py-4">
@@ -204,6 +263,8 @@ export default function Clients() {
           </table>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       <NewClientDialog
         open={dialogOpen}

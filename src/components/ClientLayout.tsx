@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock, UserCircle } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock, UserCircle, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTheme } from "@/components/ThemeProvider";
 
 const navItems = [
   { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard, requiredFeature: null },
@@ -20,6 +21,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [mobileOpen, setMobileOpen] = useState(false);
   const { signOut } = useAuth();
   const features = usePlanFeatures();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     await signOut();
@@ -51,17 +53,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                   return (
                     <Tooltip key={item.path}>
                       <TooltipTrigger asChild>
-                        <span
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground/50 cursor-not-allowed"
-                        >
+                        <span className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground/50 cursor-not-allowed">
                           <item.icon className="w-4 h-4" />
                           {item.label}
                           <Lock className="w-3 h-3" />
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Disponível no plano Pro ou superior</p>
-                      </TooltipContent>
+                      <TooltipContent><p>Disponível no plano Pro ou superior</p></TooltipContent>
                     </Tooltip>
                   );
                 }
@@ -82,6 +80,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
             <Button variant="ghost" size="sm" className="hidden md:flex" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> Sair
             </Button>
@@ -99,16 +100,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 <Link
                   key={item.path}
                   to={locked ? "#" : item.path}
-                  onClick={(e) => {
-                    if (locked) e.preventDefault();
-                    else setMobileOpen(false);
-                  }}
+                  onClick={(e) => { if (locked) e.preventDefault(); else setMobileOpen(false); }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
-                    locked
-                      ? "text-muted-foreground/50 cursor-not-allowed"
-                      : active
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground"
+                    locked ? "text-muted-foreground/50 cursor-not-allowed" : active ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
                   }`}
                 >
                   <item.icon className="w-4 h-4" />

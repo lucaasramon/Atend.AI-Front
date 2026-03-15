@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Mail, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Pagination from "@/components/Pagination";
 
 interface Notification {
   id: string;
@@ -23,32 +25,40 @@ interface Notification {
   created_at: string;
 }
 
+const PAGE_SIZE = 15;
+
 export default function AdminNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+  }, [page]);
 
   const loadNotifications = async () => {
+    setLoading(true);
     try {
+      const { count } = await supabase
+        .from("admin_notifications")
+        .select("*", { count: "exact", head: true });
+      setTotal(count || 0);
+
       const { data, error } = await supabase
         .from("admin_notifications")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (error) throw error;
       setNotifications(data || []);
     } catch (error) {
       console.error("Error loading notifications:", error);
-      toast({
-        title: "Erro ao carregar notificações",
-        description: "Não foi possível carregar as notificações.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao carregar notificações", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -62,22 +72,11 @@ export default function AdminNotifications() {
         .eq("id", id);
 
       if (error) throw error;
-
-      setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, read: true } : n
-      ));
-
-      toast({
-        title: "Marcada como lida",
-        description: "Notificação atualizada com sucesso.",
-      });
+      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+      toast({ title: "Marcada como lida" });
     } catch (error) {
       console.error("Error marking as read:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar a notificação.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", variant: "destructive" });
     }
   };
 
@@ -87,16 +86,22 @@ export default function AdminNotifications() {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case "onboarding_complete":
-        return "Onboarding Completo";
-      case "support_request":
-        return "Solicitação de Suporte";
-      default:
-        return type;
+      case "onboarding_complete": return "Onboarding Completo";
+      case "support_request": return "Solicitação de Suporte";
+      default: return type;
     }
   };
 
+  const filtered = notifications.filter(
+    (n) =>
+      (n.user_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (n.user_email || "").toLowerCase().includes(search.toLowerCase()) ||
+      (n.company || "").toLowerCase().includes(search.toLowerCase()) ||
+      getTypeLabel(n.type).toLowerCase().includes(search.toLowerCase())
+  );
+
   const unreadCount = notifications.filter(n => !n.read).length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   if (loading) {
     return (
@@ -110,7 +115,7 @@ export default function AdminNotifications() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Notificações</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Notificações</h1>
           <p className="text-muted-foreground mt-1">
             Acompanhe as solicitações e onboardings dos clientes
           </p>
@@ -122,17 +127,30 @@ export default function AdminNotifications() {
         )}
       </div>
 
-      {notifications.length === 0 ? (
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome, email ou empresa..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 bg-card border-border"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Mail className="w-16 h-16 text-muted-foreground mb-4" />
-            <p className="text-lg text-muted-foreground">Nenhuma notificação ainda</p>
+            <p className="text-lg text-muted-foreground">
+              {search ? "Nenhuma notificação encontrada" : "Nenhuma notificação ainda"}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {notifications.map((notification) => (
-            <Card 
+          {filtered.map((notification) => (
+            <Card
               key={notification.id}
               className={`transition-colors ${!notification.read ? "border-primary bg-primary/5" : ""}`}
             >
@@ -143,39 +161,22 @@ export default function AdminNotifications() {
                       <Badge variant={notification.read ? "secondary" : "default"}>
                         {getTypeLabel(notification.type)}
                       </Badge>
-                      {!notification.read && (
-                        <Badge variant="destructive">Novo</Badge>
-                      )}
+                      {!notification.read && <Badge variant="destructive">Novo</Badge>}
                     </div>
-                    <CardTitle className="text-xl">
-                      {notification.user_name || "Sem nome"}
-                    </CardTitle>
+                    <CardTitle className="text-xl">{notification.user_name || "Sem nome"}</CardTitle>
                     <CardDescription>
-                      {notification.company || "Empresa não informada"} • {" "}
+                      {notification.company || "Empresa não informada"} •{" "}
                       {format(new Date(notification.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     {!notification.read && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Marcar como lida
+                      <Button variant="outline" size="sm" onClick={() => markAsRead(notification.id)}>
+                        <Check className="w-4 h-4 mr-2" /> Marcar como lida
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleExpand(notification.id)}
-                    >
-                      {expandedId === notification.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
+                    <Button variant="ghost" size="sm" onClick={() => toggleExpand(notification.id)}>
+                      {expandedId === notification.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
@@ -227,6 +228,8 @@ export default function AdminNotifications() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
     </div>
   );
 }

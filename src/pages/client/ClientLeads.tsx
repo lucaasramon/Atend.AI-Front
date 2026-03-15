@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Search, Download, Star, StarOff, MessageSquare, PauseCircle, PlayCircle, AlertTriangle, Bot, UserRound, Lock, Sparkles, Loader2 } from "lucide-react";
+import { Search, Download, Star, StarOff, MessageSquare, PauseCircle, PlayCircle, AlertTriangle, Bot, UserRound, Lock, Sparkles, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import Pagination from "@/components/Pagination";
 import { useToast } from "@/hooks/use-toast";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,6 +58,8 @@ const pauseDurations = [
   { value: "indefinite", label: "Indeterminado" },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function ClientLeads() {
   const { canAccessLeads, loading: featuresLoading } = usePlanFeatures();
   const { user } = useAuth();
@@ -72,17 +75,22 @@ export default function ClientLeads() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [pauseDialogLead, setPauseDialogLead] = useState<LeadRow | null>(null);
   const [pauseDuration, setPauseDuration] = useState("30");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     loadData();
-  }, [user]);
+  }, [user, page]);
 
   const loadData = async () => {
     if (!user) return;
     try {
+      const { count } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("tenant_id", user.id);
+      setTotal(count || 0);
+
       const [leadsRes, intRes] = await Promise.all([
-        supabase.from("leads").select("*").eq("tenant_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("leads").select("*").eq("tenant_id", user.id).order("created_at", { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
         supabase.from("robot_interruptions").select("id, remote_jid, is_active, expires_at, reason").eq("tenant_id", user.id).eq("is_active", true),
       ]);
       setLeads((leadsRes.data as any[] || []).map(l => ({ ...l, saved: l.saved ?? false })));
@@ -337,6 +345,8 @@ export default function ClientLeads() {
           )}
         </CardContent>
       </Card>
+
+      <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} total={total} onPageChange={setPage} />
 
       {/* Pause Duration Dialog */}
       <Dialog open={!!pauseDialogLead} onOpenChange={(open) => !open && setPauseDialogLead(null)}>
