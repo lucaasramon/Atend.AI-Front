@@ -109,7 +109,7 @@ export default function LoginPage() {
           company: signupCompany,
           plan: selectedPlan,
         },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/email-confirmed`,
       },
     });
     setLoading(false);

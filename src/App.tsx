@@ -44,6 +44,7 @@ const App = () => (
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/email-confirmed" element={<EmailConfirmed />} />
 
               {/* Client Area - Protected */}
               <Route path="/client/onboarding" element={<ProtectedRoute><ClientOnboarding /></ProtectedRoute>} />
