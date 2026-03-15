@@ -22,6 +22,7 @@ import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
 import ClientTemplates from "@/pages/client/ClientTemplates";
 import ClientOnboarding from "@/pages/client/ClientOnboarding";
+import ClientProfile from "@/pages/client/ClientProfile";
 import AdminNotifications from "@/pages/AdminNotifications";
 import NotFound from "@/pages/NotFound";
 
