@@ -27,7 +27,22 @@ export default function LoginPage() {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
 
-  const redirectAfterAuth = () => {
+  const redirectAfterAuth = async () => {
+    // Check if user is admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin");
+
+      if (roles && roles.length > 0) {
+        navigate("/admin");
+        return;
+      }
+    }
+
     if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
       navigate(`/client/billing?auto_checkout=${selectedPlan}`);
     } else {
