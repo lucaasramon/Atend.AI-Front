@@ -119,7 +119,7 @@ export default function LoginPage() {
     } else if (data.user) {
       if (data.session) {
         toast({ title: "Conta criada!", description: "Redirecionando..." });
-        redirectAfterAuth();
+        await redirectAfterAuth();
       } else {
         toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
       }
