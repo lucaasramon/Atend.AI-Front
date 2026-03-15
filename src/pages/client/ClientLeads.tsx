@@ -75,6 +75,8 @@ export default function ClientLeads() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [pauseDialogLead, setPauseDialogLead] = useState<LeadRow | null>(null);
   const [pauseDuration, setPauseDuration] = useState("30");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!user) return;
