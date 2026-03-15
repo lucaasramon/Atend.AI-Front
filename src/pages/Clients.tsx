@@ -51,6 +51,8 @@ export default function Clients() {
 
   const toggleStatus = async (profile: Profile) => {
     const newStatus = (profile as any).status === "blocked" ? "active" : "blocked";
+    const action = newStatus === "blocked" ? "bloquear" : "reativar";
+    if (!window.confirm(`Tem certeza que deseja ${action} ${profile.company || profile.full_name}?`)) return;
     setTogglingId(profile.id);
     try {
       const { error } = await supabase

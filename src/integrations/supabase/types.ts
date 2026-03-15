@@ -68,6 +68,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          saved: boolean | null
           sentiment: string | null
           source: string | null
           status: string | null
@@ -82,6 +83,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          saved?: boolean | null
           sentiment?: string | null
           source?: string | null
           status?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          saved?: boolean | null
           sentiment?: string | null
           source?: string | null
           status?: string | null
@@ -103,6 +106,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          from_me: boolean | null
+          id: string
+          lead_id: string | null
+          message_type: string | null
+          remote_jid: string
+          tenant_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          from_me?: boolean | null
+          id?: string
+          lead_id?: string | null
+          message_type?: string | null
+          remote_jid: string
+          tenant_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          from_me?: boolean | null
+          id?: string
+          lead_id?: string | null
+          message_type?: string | null
+          remote_jid?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -221,6 +265,27 @@ export type Database = {
           reason?: string | null
           remote_jid?: string
           tenant_id?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string | null
         }
         Relationships: []
       }

@@ -22,6 +22,7 @@ import ClientLeads from "@/pages/client/ClientLeads";
 import ClientBilling from "@/pages/client/ClientBilling";
 import ClientTemplates from "@/pages/client/ClientTemplates";
 import ClientOnboarding from "@/pages/client/ClientOnboarding";
+import ClientProfile from "@/pages/client/ClientProfile";
 import AdminNotifications from "@/pages/AdminNotifications";
 import NotFound from "@/pages/NotFound";
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/client/leads" element={<ProtectedRoute><ClientLayout><ClientLeads /></ClientLayout></ProtectedRoute>} />
             <Route path="/client/billing" element={<ProtectedRoute><ClientLayout><ClientBilling /></ClientLayout></ProtectedRoute>} />
             <Route path="/client/templates" element={<ProtectedRoute><ClientLayout><ClientTemplates /></ClientLayout></ProtectedRoute>} />
+            <Route path="/client/profile" element={<ProtectedRoute><ClientLayout><ClientProfile /></ClientLayout></ProtectedRoute>} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />

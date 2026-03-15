@@ -110,6 +110,7 @@ export default function ClientTemplates() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir este template? Esta ação não pode ser desfeita.")) return;
     const { error } = await supabase.from("response_templates").delete().eq("id", id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });

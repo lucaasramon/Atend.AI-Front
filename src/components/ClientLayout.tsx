@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
@@ -11,6 +11,7 @@ const navItems = [
   { path: "/client/leads", label: "Leads", icon: Users, requiredFeature: "canAccessLeads" as const },
   { path: "/client/templates", label: "Templates", icon: FileText, requiredFeature: null },
   { path: "/client/billing", label: "Pagamento", icon: CreditCard, requiredFeature: null },
+  { path: "/client/profile", label: "Perfil", icon: UserCircle, requiredFeature: null },
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {

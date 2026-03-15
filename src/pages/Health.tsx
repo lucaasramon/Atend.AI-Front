@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { AlertTriangle, CheckCircle2, XCircle, RefreshCw, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, RefreshCw, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Link } from "react-router-dom";
 
 interface RobotInterruption {
   id: string;
@@ -18,19 +19,21 @@ interface RobotInterruption {
   created_by: string | null;
 }
 
-const services = [
-  { name: "n8n Server", status: "online" as const, latency: "45ms", uptime: "99.8%" },
-  { name: "Evolution API", status: "online" as const, latency: "120ms", uptime: "99.2%" },
-  { name: "OpenAI API", status: "warning" as const, latency: "380ms", uptime: "98.5%" },
-  { name: "PostgreSQL", status: "online" as const, latency: "12ms", uptime: "99.9%" },
-];
+interface ServiceStatus {
+  name: string;
+  configured: boolean;
+  url: string;
+}
 
 export default function Health() {
   const [interruptions, setInterruptions] = useState<RobotInterruption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState<ServiceStatus[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
 
   useEffect(() => {
     loadInterruptions();
+    loadServices();
   }, []);
 
   const loadInterruptions = async () => {
@@ -51,6 +54,48 @@ export default function Health() {
     }
   };
 
+  const loadServices = async () => {
+    try {
+      const { data } = await (supabase as any)
+        .from("system_settings")
+        .select("key, value");
+
+      const settingsMap: Record<string, string> = {};
+      if (data) {
+        for (const row of data) {
+          settingsMap[row.key] = row.value;
+        }
+      }
+
+      setServices([
+        {
+          name: "n8n Server",
+          configured: !!settingsMap.n8n_url,
+          url: settingsMap.n8n_url || "",
+        },
+        {
+          name: "Evolution API",
+          configured: !!settingsMap.evolution_url,
+          url: settingsMap.evolution_url || "",
+        },
+        {
+          name: "Stripe (Pagamentos)",
+          configured: true, // Always configured via edge function
+          url: "Configurado via backend",
+        },
+        {
+          name: "Banco de Dados",
+          configured: true,
+          url: "Operacional",
+        },
+      ]);
+    } catch {
+      setServices([]);
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -58,7 +103,7 @@ export default function Health() {
           <h1 className="text-2xl font-semibold text-foreground">Saúde & Logs</h1>
           <p className="text-sm text-muted-foreground mt-1">Monitoramento da infraestrutura</p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadInterruptions} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={() => { loadInterruptions(); loadServices(); }} disabled={loading}>
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
           Atualizar
         </Button>
@@ -66,22 +111,32 @@ export default function Health() {
 
       {/* Services */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {services.map((svc) => (
+        {servicesLoading ? (
+          <div className="col-span-4 flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : services.map((svc) => (
           <div key={svc.name} className="rounded-lg border border-border bg-card p-4 shadow-card">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-card-foreground">{svc.name}</span>
-              {svc.status === "online" ? (
+              {svc.configured ? (
                 <CheckCircle2 className="w-4 h-4 text-success" />
-              ) : svc.status === "warning" ? (
-                <AlertTriangle className="w-4 h-4 text-warning" />
               ) : (
-                <XCircle className="w-4 h-4 text-destructive" />
+                <XCircle className="w-4 h-4 text-muted-foreground" />
               )}
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Latência: {svc.latency}</span>
-              <span>Uptime: {svc.uptime}</span>
+            <div className="text-xs text-muted-foreground">
+              {svc.configured ? (
+                <span className="text-success">Configurado</span>
+              ) : (
+                <Link to="/admin/settings" className="flex items-center gap-1 text-primary hover:underline">
+                  <Settings className="w-3 h-3" /> Configurar
+                </Link>
+              )}
             </div>
+            {svc.url && svc.configured && svc.url !== "Configurado via backend" && svc.url !== "Operacional" && (
+              <p className="text-[10px] text-muted-foreground font-mono mt-1 truncate">{svc.url}</p>
+            )}
           </div>
         ))}
       </div>
