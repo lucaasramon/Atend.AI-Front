@@ -58,6 +58,8 @@ const pauseDurations = [
   { value: "indefinite", label: "Indeterminado" },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function ClientLeads() {
   const { canAccessLeads, loading: featuresLoading } = usePlanFeatures();
   const { user } = useAuth();
