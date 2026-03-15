@@ -11,6 +11,7 @@ const navItems = [
   { path: "/client/leads", label: "Leads", icon: Users, requiredFeature: "canAccessLeads" as const },
   { path: "/client/templates", label: "Templates", icon: FileText, requiredFeature: null },
   { path: "/client/billing", label: "Pagamento", icon: CreditCard, requiredFeature: null },
+  { path: "/client/profile", label: "Perfil", icon: UserCircle, requiredFeature: null },
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
