@@ -7,7 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NewClientDialog from "@/components/NewClientDialog";
-import { Client } from "@/data/mockData";
+
 
 interface Profile {
   id: string;
@@ -84,9 +84,7 @@ export default function Clients() {
       (p.whatsapp_number || "").includes(search)
   );
 
-  // NewClientDialog still uses mock Client type for local state after creation
-  const handleClientCreated = (client: Client) => {
-    // Refresh from DB to show real data
+  const handleClientCreated = () => {
     loadProfiles();
   };
 

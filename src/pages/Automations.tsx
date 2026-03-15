@@ -1,55 +1,96 @@
-import { Zap, Play, Pause, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Zap, Loader2, Users, Globe } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
-import { mockClients } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
 
-const workflows = mockClients.filter(c => c.status === "active").map(c => ({
-  id: c.id,
-  name: `WF-${c.company.replace(/\s/g, "")}`,
-  client: c.company,
-  status: c.whatsappStatus === "online" ? "active" as const : "inactive" as const,
-  lastRun: "2026-03-06 14:30",
-  executions: Math.floor(Math.random() * 500) + 100,
-}));
+interface ClientWorkflow {
+  id: string;
+  company: string;
+  full_name: string;
+  plan: string;
+  status: string;
+  whatsapp_number: string | null;
+  webhook_url: string | null;
+}
 
 export default function Automations() {
+  const [clients, setClients] = useState<ClientWorkflow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, company, full_name, plan, status, whatsapp_number, webhook_url")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        setClients(data || []);
+      } catch (error) {
+        console.error("Error loading automations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Automações</h1>
-        <p className="text-sm text-muted-foreground mt-1">Workflows n8n vinculados</p>
+        <p className="text-sm text-muted-foreground mt-1">Workflows vinculados aos clientes</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {workflows.map((wf) => (
-          <div key={wf.id} className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4 hover:border-primary/30 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-md gradient-primary flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-primary-foreground" />
+      {clients.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Zap className="w-12 h-12 mx-auto mb-4 opacity-30" />
+          <p>Nenhum cliente cadastrado ainda</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {clients.map((client) => (
+            <div key={client.id} className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md gradient-primary flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-card-foreground">{client.company || "Sem empresa"}</p>
+                    <p className="text-xs text-muted-foreground">{client.full_name}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-card-foreground font-mono">{wf.name}</p>
-                  <p className="text-xs text-muted-foreground">{wf.client}</p>
-                </div>
+                <StatusBadge status={client.status === "active" ? "active" : "inactive"} />
               </div>
-              <StatusBadge status={wf.status} />
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3 h-3" />
+                  Plano: <span className="text-foreground font-medium">{client.plan}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Globe className="w-3 h-3" />
+                  WhatsApp: {client.whatsapp_number || "Não configurado"}
+                </div>
+                {client.webhook_url && (
+                  <div className="truncate">
+                    Webhook: <span className="font-mono">{client.webhook_url}</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Último run: {wf.lastRun}</span>
-              <span>{wf.executions} execuções</span>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 text-xs">
-                {wf.status === "active" ? <><Pause className="w-3 h-3 mr-1" />Pausar</> : <><Play className="w-3 h-3 mr-1" />Iniciar</>}
-              </Button>
-              <Button variant="ghost" size="sm">
-                <RefreshCw className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

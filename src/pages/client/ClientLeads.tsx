@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Search, Download, Star, StarOff, MessageSquare, PauseCircle, PlayCircle, AlertTriangle, Bot, UserRound } from "lucide-react";
+import { Search, Download, Star, StarOff, MessageSquare, PauseCircle, PlayCircle, AlertTriangle, Bot, UserRound, Lock, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanFeatures } from "@/hooks/use-plan-features";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -92,12 +94,37 @@ const pauseDurations = [
 ];
 
 export default function ClientLeads() {
+  const { canAccessLeads, loading: featuresLoading } = usePlanFeatures();
+  const navigate = useNavigate();
   const [leads, setLeads] = useState(mockLeads);
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [pauseDialogLead, setPauseDialogLead] = useState<Lead | null>(null);
   const [pauseDuration, setPauseDuration] = useState("30");
   const { toast } = useToast();
+
+  if (!featuresLoading && !canAccessLeads) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Leads</h1>
+          <p className="text-muted-foreground">Contatos que interagiram com seu WhatsApp</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Recurso disponível no plano Pro</h2>
+            <p className="text-muted-foreground text-center mb-6 max-w-md">
+              A gestão de leads com análise de sentimento e controle de pausas está disponível a partir do plano Pro.
+            </p>
+            <Button onClick={() => navigate("/client/billing")} className="gap-2">
+              <Sparkles className="w-4 h-4" /> Fazer Upgrade
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const filtered = leads.filter(
     (l) => l.name.toLowerCase().includes(search.toLowerCase()) || l.phone.includes(search)
