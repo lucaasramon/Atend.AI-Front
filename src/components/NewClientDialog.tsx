@@ -66,38 +66,43 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
     },
   });
 
-  const onSubmit = (data: ClientFormData) => {
-    const newClient: Client = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      company: data.company,
-      status: "active",
-      whatsappStatus: "offline",
-      phone: data.phone,
-      plan: data.plan,
-      monthlyValue: data.monthlyValue,
-      dueDate: data.dueDate,
-      messagesThisMonth: 0,
-      tokensUsed: 0,
-      riskScore: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      systemPrompt: data.systemPrompt,
-      variables: {
-        empresa: data.varEmpresa,
-        horario: data.varHorario,
-        transbordo: data.varTransbordo,
-      },
-    };
+  const [submitting, setSubmitting] = useState(false);
 
-    onClientCreated(newClient);
-    toast.success(`${data.company} criado com sucesso! Automação configurada.`);
-    form.reset();
-    setKnowledgeFiles([]);
-    setFaqItems([]);
-    setNewFaqQuestion("");
-    setNewFaqAnswer("");
-    setActiveTab("info");
-    onOpenChange(false);
+  const onSubmit = async (data: ClientFormData) => {
+    setSubmitting(true);
+    try {
+      // Create a new auth user via edge function or directly insert a profile
+      // For admin-created clients, we insert directly into profiles
+      const newId = crypto.randomUUID();
+      const { error } = await supabase.from("profiles").insert({
+        id: newId,
+        full_name: data.name,
+        company: data.company,
+        phone: data.phone,
+        plan: data.plan.toLowerCase(),
+        system_prompt: data.systemPrompt,
+        webhook_url: data.webhookUrl || null,
+        whatsapp_number: data.phone,
+        onboarding_completed: true,
+        status: "active",
+      });
+
+      if (error) throw error;
+
+      onClientCreated();
+      toast.success(`${data.company} criado com sucesso!`);
+      form.reset();
+      setKnowledgeFiles([]);
+      setFaqItems([]);
+      setNewFaqQuestion("");
+      setNewFaqAnswer("");
+      setActiveTab("info");
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(`Erro ao criar cliente: ${error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handlePlanChange = (value: string) => {
