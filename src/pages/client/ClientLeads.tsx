@@ -346,6 +346,8 @@ export default function ClientLeads() {
         </CardContent>
       </Card>
 
+      <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} total={total} onPageChange={setPage} />
+
       {/* Pause Duration Dialog */}
       <Dialog open={!!pauseDialogLead} onOpenChange={(open) => !open && setPauseDialogLead(null)}>
         <DialogContent className="sm:max-w-md">
