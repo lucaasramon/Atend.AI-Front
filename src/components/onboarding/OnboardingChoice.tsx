@@ -29,11 +29,11 @@ export default function OnboardingChoice({ onChoose }: OnboardingChoiceProps) {
               
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-foreground">
-                  Configurar Sozinho
+                  Preencher Cadastro
                 </h2>
                 <p className="text-muted-foreground">
-                  Configure seu robô passo a passo através do nosso assistente guiado. 
-                  Você terá controle total sobre todas as configurações.
+                  Preencha os dados da sua empresa e nosso time configura seu robô. 
+                  Processo rápido e simples.
                 </p>
               </div>
 
