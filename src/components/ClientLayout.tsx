@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/ThemeProvider";
+import SupportDialog from "@/components/SupportDialog";
 
 const navItems = [
   { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard, requiredFeature: null },
@@ -80,6 +81,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <SupportDialog />
+            </div>
             <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
@@ -111,6 +115,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 </Link>
               );
             })}
+            <div className="px-3 py-2">
+              <SupportDialog />
+            </div>
             <button onClick={() => { setMobileOpen(false); handleLogout(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground w-full">
               <LogOut className="w-4 h-4" /> Sair
             </button>
