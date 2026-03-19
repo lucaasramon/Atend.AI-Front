@@ -29,30 +29,30 @@ export default function OnboardingChoice({ onChoose }: OnboardingChoiceProps) {
               
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-foreground">
-                  Configurar Sozinho
+                  Preencher Cadastro
                 </h2>
                 <p className="text-muted-foreground">
-                  Configure seu robô passo a passo através do nosso assistente guiado. 
-                  Você terá controle total sobre todas as configurações.
+                  Preencha os dados da sua empresa e nosso time configura seu robô. 
+                  Processo rápido e simples.
                 </p>
               </div>
 
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Configuração guiada passo a passo</span>
+                  <span>Cadastro guiado passo a passo</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Controle total das configurações</span>
+                  <span>Preencha os dados da sua empresa</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Personalize a inteligência do robô</span>
+                  <span>Rápido e simples</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Configure integrações e webhooks</span>
+                  <span>Nosso suporte configura o robô para você</span>
                 </li>
               </ul>
 
@@ -61,7 +61,7 @@ export default function OnboardingChoice({ onChoose }: OnboardingChoiceProps) {
                 className="w-full group-hover:bg-primary/90"
                 size="lg"
               >
-                Começar Configuração
+                Preencher Cadastro
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </CardContent>
