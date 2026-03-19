@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/ThemeProvider";
+import SupportDialog from "@/components/SupportDialog";
 
 const navItems = [
   { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard, requiredFeature: null },
