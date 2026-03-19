@@ -61,7 +61,7 @@ export default function OnboardingChoice({ onChoose }: OnboardingChoiceProps) {
                 className="w-full group-hover:bg-primary/90"
                 size="lg"
               >
-                Começar Configuração
+                Preencher Cadastro
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </CardContent>
