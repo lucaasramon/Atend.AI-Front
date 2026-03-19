@@ -115,6 +115,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 </Link>
               );
             })}
+            <div className="px-3 py-2">
+              <SupportDialog />
+            </div>
             <button onClick={() => { setMobileOpen(false); handleLogout(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground w-full">
               <LogOut className="w-4 h-4" /> Sair
             </button>
