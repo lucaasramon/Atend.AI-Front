@@ -54,7 +54,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const isBillingPage = location.pathname === "/client/billing";
   const isOnboardingPage = location.pathname === "/client/onboarding";
 
-  if (!subscribed && !isBillingPage) {
+  if (!subscribed && !isBillingPage && !isOnboardingPage) {
     return <Navigate to="/client/billing" replace />;
   }
 
