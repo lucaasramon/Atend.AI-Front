@@ -1,10 +1,8 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Smartphone, Brain, CreditCard, Shield, Loader2, Save } from "lucide-react";
+import { ArrowLeft, CreditCard, Shield, Loader2, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +16,6 @@ interface Profile {
   company: string | null;
   phone: string | null;
   plan: string;
-  whatsapp_number: string | null;
-  webhook_url: string | null;
-  system_prompt: string | null;
   onboarding_completed: boolean;
   onboarding_data: any;
   status: string;
@@ -35,11 +30,6 @@ export default function ClientDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Editable fields
-  const [systemPrompt, setSystemPrompt] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("");
-
   useEffect(() => {
     if (id) loadProfile(id);
   }, [id]);
@@ -53,11 +43,7 @@ export default function ClientDetail() {
         .single();
 
       if (error) throw error;
-      const p = data as unknown as Profile;
-      setProfile(p);
-      setSystemPrompt(p.system_prompt || "");
-      setWebhookUrl(p.webhook_url || "");
-      setWhatsappNumber(p.whatsapp_number || "");
+      setProfile(data as unknown as Profile);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast({ title: "Erro ao carregar cliente", variant: "destructive" });
@@ -88,7 +74,7 @@ export default function ClientDetail() {
 
   const toggleKillSwitch = async () => {
     if (!profile) return;
-    const newStatus = (profile as any).status === "blocked" ? "active" : "blocked";
+    const newStatus = profile.status === "blocked" ? "active" : "blocked";
     await saveChanges({ status: newStatus } as any);
   };
 
@@ -108,7 +94,7 @@ export default function ClientDetail() {
     );
   }
 
-  const isBlocked = (profile as any).status === "blocked";
+  const isBlocked = profile.status === "blocked";
 
   return (
     <div className="space-y-6">
@@ -145,119 +131,15 @@ export default function ClientDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="whatsapp" className="space-y-4">
+      <Tabs defaultValue="billing" className="space-y-4">
         <TabsList className="bg-muted/50 border border-border">
-          <TabsTrigger value="whatsapp" className="data-[state=active]:bg-card data-[state=active]:text-primary">
-            <Smartphone className="w-4 h-4 mr-2" />WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="brain" className="data-[state=active]:bg-card data-[state=active]:text-primary">
-            <Brain className="w-4 h-4 mr-2" />Cérebro IA
-          </TabsTrigger>
           <TabsTrigger value="billing" className="data-[state=active]:bg-card data-[state=active]:text-primary">
             <CreditCard className="w-4 h-4 mr-2" />Billing
           </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:bg-card data-[state=active]:text-primary">
+          <TabsTrigger value="onboarding" className="data-[state=active]:bg-card data-[state=active]:text-primary">
             <Shield className="w-4 h-4 mr-2" />Onboarding
           </TabsTrigger>
         </TabsList>
-
-        {/* WhatsApp Tab */}
-        <TabsContent value="whatsapp">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
-              <h3 className="text-sm font-medium text-card-foreground">Conexão WhatsApp</h3>
-              <div className="flex items-center gap-3">
-                <StatusBadge
-                  status={profile.whatsapp_number ? "online" : "offline"}
-                  label={profile.whatsapp_number ? "Configurado" : "Não configurado"}
-                />
-                <span className="text-xs text-muted-foreground font-mono">{profile.whatsapp_number || "—"}</span>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Número WhatsApp</Label>
-                <Input
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="+5511999999999"
-                  className="bg-muted/50 border-border font-mono text-xs"
-                />
-              </div>
-              <div className="flex items-center justify-center h-32 rounded-md border border-dashed border-border bg-muted/30">
-                <div className="text-center">
-                  <Smartphone className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">
-                    {profile.whatsapp_number ? "Conectado via Evolution API" : "Número ainda não configurado"}
-                  </p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                className="w-full gradient-primary text-primary-foreground border-0"
-                disabled={saving}
-                onClick={() => saveChanges({ whatsapp_number: whatsappNumber } as any)}
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                Salvar WhatsApp
-              </Button>
-            </div>
-
-            <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
-              <h3 className="text-sm font-medium text-card-foreground">Webhook n8n</h3>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">URL do Webhook</Label>
-                <Input
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.target.value)}
-                  placeholder="https://n8n.seuservidor.com/webhook/..."
-                  className="bg-muted/50 border-border font-mono text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Status</Label>
-                <div className="mt-1">
-                  <StatusBadge
-                    status={profile.webhook_url ? "online" : "offline"}
-                    label={profile.webhook_url ? "Configurado" : "Não configurado"}
-                  />
-                </div>
-              </div>
-              <Button
-                size="sm"
-                className="w-full gradient-primary text-primary-foreground border-0"
-                disabled={saving}
-                onClick={() => saveChanges({ webhook_url: webhookUrl } as any)}
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                Salvar Webhook
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* AI Brain Tab */}
-        <TabsContent value="brain">
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
-              <h3 className="text-sm font-medium text-card-foreground">System Prompt</h3>
-              <Textarea
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                rows={8}
-                placeholder="Você é o assistente virtual de..."
-                className="bg-muted/50 border-border font-mono text-xs resize-none"
-              />
-              <Button
-                size="sm"
-                className="gradient-primary text-primary-foreground border-0"
-                disabled={saving}
-                onClick={() => saveChanges({ system_prompt: systemPrompt } as any)}
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                Salvar Prompt
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
 
         {/* Billing Tab */}
         <TabsContent value="billing">
@@ -305,7 +187,7 @@ export default function ClientDetail() {
         </TabsContent>
 
         {/* Onboarding Tab */}
-        <TabsContent value="security">
+        <TabsContent value="onboarding">
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
               <h3 className="text-sm font-medium text-card-foreground">Status do Onboarding</h3>
