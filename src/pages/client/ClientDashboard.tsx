@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import RobotStatusWidget from "@/components/RobotStatusWidget";
 
 interface Lead {
   id: string;
