@@ -310,18 +310,23 @@ export default function ClientDashboard() {
       {/* Robot Status */}
       <RobotStatusWidget />
 
-      <div className="flex items-center justify-between">
+      <OnboardingTour />
+
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Acompanhe o desempenho do seu atendimento</p>
         </div>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as "7" | "14" | "30")}>
-          <TabsList>
-            <TabsTrigger value="7">7 dias</TabsTrigger>
-            <TabsTrigger value="14">14 dias</TabsTrigger>
-            <TabsTrigger value="30">30 dias</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-3">
+          <ExportReports />
+          <Tabs value={period} onValueChange={(v) => setPeriod(v as "7" | "14" | "30")}>
+            <TabsList>
+              <TabsTrigger value="7">7 dias</TabsTrigger>
+              <TabsTrigger value="14">14 dias</TabsTrigger>
+              <TabsTrigger value="30">30 dias</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* KPI Cards */}
