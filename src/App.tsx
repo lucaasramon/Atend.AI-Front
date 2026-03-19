@@ -26,6 +26,8 @@ import ClientBilling from "@/pages/client/ClientBilling";
 import ClientTemplates from "@/pages/client/ClientTemplates";
 import ClientOnboarding from "@/pages/client/ClientOnboarding";
 import ClientProfile from "@/pages/client/ClientProfile";
+import ClientKnowledgeBase from "@/pages/client/ClientKnowledgeBase";
+import ClientHelp from "@/pages/client/ClientHelp";
 import AdminNotifications from "@/pages/AdminNotifications";
 import NotFound from "@/pages/NotFound";
 
@@ -53,6 +55,8 @@ const App = () => (
               <Route path="/client/billing" element={<ProtectedRoute><ClientLayout><ClientBilling /></ClientLayout></ProtectedRoute>} />
               <Route path="/client/templates" element={<ProtectedRoute><ClientLayout><ClientTemplates /></ClientLayout></ProtectedRoute>} />
               <Route path="/client/profile" element={<ProtectedRoute><ClientLayout><ClientProfile /></ClientLayout></ProtectedRoute>} />
+              <Route path="/client/knowledge" element={<ProtectedRoute><ClientLayout><ClientKnowledgeBase /></ClientLayout></ProtectedRoute>} />
+              <Route path="/client/help" element={<ProtectedRoute><ClientLayout><ClientHelp /></ClientLayout></ProtectedRoute>} />
 
               {/* Admin Area - Protected */}
               <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />
