@@ -40,19 +40,19 @@ export default function OnboardingChoice({ onChoose }: OnboardingChoiceProps) {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Configuração guiada passo a passo</span>
+                  <span>Cadastro guiado passo a passo</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Controle total das configurações</span>
+                  <span>Preencha os dados da sua empresa</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Personalize a inteligência do robô</span>
+                  <span>Rápido e simples</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">✓</span>
-                  <span>Configure integrações e webhooks</span>
+                  <span>Nosso suporte configura o robô para você</span>
                 </li>
               </ul>
 
