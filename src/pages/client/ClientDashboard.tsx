@@ -304,6 +304,9 @@ export default function ClientDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Robot Status */}
+      <RobotStatusWidget />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
