@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock, UserCircle, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Zap, Menu, X, Lock, UserCircle, Sun, Moon, BookOpen, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/ThemeProvider";
 import SupportDialog from "@/components/SupportDialog";
+import NotificationBell from "@/components/NotificationBell";
 
 const navItems = [
   { path: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard, requiredFeature: null },
   { path: "/client/leads", label: "Leads", icon: Users, requiredFeature: "canAccessLeads" as const },
   { path: "/client/templates", label: "Templates", icon: FileText, requiredFeature: null },
+  { path: "/client/knowledge", label: "FAQ", icon: BookOpen, requiredFeature: null },
   { path: "/client/billing", label: "Pagamento", icon: CreditCard, requiredFeature: null },
   { path: "/client/profile", label: "Perfil", icon: UserCircle, requiredFeature: null },
+  { path: "/client/help", label: "Ajuda", icon: HelpCircle, requiredFeature: null },
 ];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -80,10 +83,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               })}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <div className="hidden md:block">
               <SupportDialog />
             </div>
+            <NotificationBell />
             <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
