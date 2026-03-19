@@ -13,6 +13,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import RobotStatusWidget from "@/components/RobotStatusWidget";
+import ExportReports from "@/components/ExportReports";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import OnboardingTour from "@/components/OnboardingTour";
 
 interface Lead {
   id: string;
