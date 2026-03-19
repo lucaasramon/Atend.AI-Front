@@ -549,6 +549,8 @@ export default function ClientDashboard() {
           </div>
         </CardContent>
       </Card>
+      {/* Activity Timeline */}
+      <ActivityTimeline />
     </div>
   );
 }
