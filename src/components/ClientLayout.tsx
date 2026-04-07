@@ -43,9 +43,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-6">
             <Link to="/client/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <Zap className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
               <span className="font-semibold text-sm">AtendIA</span>
             </Link>
             <div className="hidden md:flex items-center gap-1">

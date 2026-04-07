@@ -1,6 +1,3 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/use-subscription";
 
 export interface PlanFeatures {
@@ -68,35 +65,14 @@ const DEFAULT_FEATURES: PlanFeatures = {
 };
 
 export function usePlanFeatures(): PlanFeatures {
-  const { user } = useAuth();
-  const { planId, loading: subLoading } = useSubscription();
-  const [profilePlan, setProfilePlan] = useState<string | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-      setProfileLoading(false);
-      return;
-    }
-    const load = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", user.id)
-        .single();
-      setProfilePlan(data?.plan || null);
-      setProfileLoading(false);
-    };
-    load();
-  }, [user]);
-
-  const effectivePlan = planId || profilePlan || "starter";
+  const { planId, loading } = useSubscription();
+  const effectivePlan = planId || "starter";
   const features = PLAN_FEATURES[effectivePlan] || PLAN_FEATURES.starter;
 
   return {
     ...DEFAULT_FEATURES,
     ...features,
     planId: effectivePlan,
-    loading: subLoading || profileLoading,
+    loading,
   };
 }

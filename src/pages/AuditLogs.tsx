@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, ScrollText, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -26,31 +26,12 @@ export default function AuditLogs() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    loadLogs();
-  }, [page]);
-
-  const loadLogs = async () => {
     setLoading(true);
-    try {
-      const { count } = await (supabase as any)
-        .from("audit_logs")
-        .select("*", { count: "exact", head: true });
-      setTotal(count || 0);
-
-      const { data, error } = await (supabase as any)
-        .from("audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-      if (error) throw error;
-      setLogs(data || []);
-    } catch (error) {
-      console.error("Error loading audit logs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    api.get<{ data: AuditLog[]; total: number }>(`/api/audit?page=${page}&limit=${PAGE_SIZE}`)
+      .then((res) => { setLogs(res.data || []); setTotal(res.total || 0); })
+      .catch((err) => console.error("Error loading audit logs:", err))
+      .finally(() => setLoading(false));
+  }, [page]);
 
   const filtered = logs.filter(
     (l) =>
@@ -70,19 +51,12 @@ export default function AuditLogs() {
 
       <div className="relative max-w-sm">
         <ScrollText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Filtrar por ação ou tipo..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-card border-border"
-        />
+        <Input placeholder="Filtrar por ação ou tipo..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
       </div>
 
       <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
+          <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <ScrollText className="w-10 h-10 mb-3 opacity-30" />
@@ -107,9 +81,7 @@ export default function AuditLogs() {
                   </td>
                   <td className="px-5 py-3 text-card-foreground font-medium">{log.action}</td>
                   <td className="px-5 py-3 text-xs font-mono text-primary">{log.target_type}</td>
-                  <td className="px-5 py-3 text-xs font-mono text-muted-foreground truncate max-w-[200px]">
-                    {log.target_id || "—"}
-                  </td>
+                  <td className="px-5 py-3 text-xs font-mono text-muted-foreground truncate max-w-[200px]">{log.target_id || "—"}</td>
                   <td className="px-5 py-3 text-xs text-muted-foreground truncate max-w-[250px]">
                     {log.details ? JSON.stringify(log.details) : "—"}
                   </td>

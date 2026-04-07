@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -14,8 +14,9 @@ import {
   ScrollText,
   Sun,
   Moon,
+  LogOut,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
@@ -34,31 +35,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   useEffect(() => {
     loadUnreadCount();
-
-    const channel = supabase
-      .channel('admin_notifications_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'admin_notifications' },
-        () => loadUnreadCount()
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadUnreadCount = async () => {
     try {
-      const { count, error } = await supabase
-        .from("admin_notifications")
-        .select("*", { count: 'exact', head: true })
-        .eq("read", false);
-      if (error) throw error;
-      setUnreadCount(count || 0);
+      const data = await api.get<{ count: number }>("/api/notifications/admin/unread-count");
+      setUnreadCount(data.count || 0);
     } catch (error) {
       console.error("Error loading unread count:", error);
     }
@@ -72,9 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }`}
       >
         <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
-          <div className="flex items-center justify-center w-8 h-8 rounded-md gradient-primary">
-            <Zap className="w-4 h-4 text-primary-foreground" />
-          </div>
+          <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-md object-contain" />
           {!collapsed && (
             <span className="font-semibold text-foreground tracking-tight text-sm">
               N8N Orchestrator
@@ -118,6 +110,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             title={theme === "dark" ? "Modo claro" : "Modo escuro"}
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={handleLogout}
+            title="Sair"
+            className="flex items-center justify-center w-full py-2 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            {!collapsed && <span className="ml-3 text-sm">Sair</span>}
           </button>
           <button
             onClick={() => setCollapsed(!collapsed)}

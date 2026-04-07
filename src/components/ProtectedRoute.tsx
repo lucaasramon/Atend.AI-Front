@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
@@ -12,31 +12,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
-    const checkOnboarding = async () => {
-      if (!user) {
-        setCheckingOnboarding(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-        setOnboardingCompleted(data?.onboarding_completed ?? false);
-      } catch (error) {
-        console.error("Error checking onboarding:", error);
-        setOnboardingCompleted(false);
-      } finally {
-        setCheckingOnboarding(false);
-      }
-    };
-
-    checkOnboarding();
-  }, [user]);
+    if (!user) {
+      setCheckingOnboarding(false);
+      return;
+    }
+    setCheckingOnboarding(true);
+    api.get<{ onboarding_completed: boolean }>("/api/profiles/me")
+      .then((p) => setOnboardingCompleted(p.onboarding_completed ?? false))
+      .catch(() => setOnboardingCompleted(false))
+      .finally(() => setCheckingOnboarding(false));
+  }, [user, location.pathname]);
 
   if (authLoading || subLoading || checkingOnboarding) {
     return (
@@ -46,26 +31,18 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!user) return <Navigate to="/login" replace />;
 
-  // Allow access to billing page without subscription
   const isBillingPage = location.pathname === "/client/billing";
   const isOnboardingPage = location.pathname === "/client/onboarding";
 
-  if (!subscribed && !isBillingPage && !isOnboardingPage) {
+  // Bloqueia acesso à plataforma até ter assinatura ativa
+  if (!subscribed && !isBillingPage) {
     return <Navigate to="/client/billing" replace />;
   }
 
-  // If user is subscribed but hasn't completed onboarding, redirect to onboarding
-  // (except if already on onboarding or billing pages)
-  if (
-    subscribed && 
-    !onboardingCompleted && 
-    !isOnboardingPage &&
-    !isBillingPage
-  ) {
+  // Após pagamento, exige onboarding
+  if (subscribed && !onboardingCompleted && !isOnboardingPage && !isBillingPage) {
     return <Navigate to="/client/onboarding" replace />;
   }
 

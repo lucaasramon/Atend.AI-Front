@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,19 +36,12 @@ export default function ExportReports() {
     if (!user) return;
     setExporting("leads");
     try {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("name, email, phone, status, sentiment, source, created_at, updated_at")
-        .eq("tenant_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const data = await api.get<any[]>("/api/leads/all");
       if (!data?.length) {
         toast({ title: "Nenhum lead encontrado", variant: "destructive" });
         return;
       }
-
-      downloadCSV(data.map(l => ({
+      downloadCSV(data.map((l: any) => ({
         Nome: l.name,
         Email: l.email || "",
         Telefone: l.phone || "",
@@ -58,7 +51,6 @@ export default function ExportReports() {
         "Criado em": new Date(l.created_at).toLocaleString("pt-BR"),
         "Atualizado em": new Date(l.updated_at).toLocaleString("pt-BR"),
       })), `leads_${new Date().toISOString().slice(0, 10)}.csv`);
-
       toast({ title: "Leads exportados! ✅" });
     } catch (error) {
       toast({ title: "Erro ao exportar", variant: "destructive" });
@@ -71,26 +63,18 @@ export default function ExportReports() {
     if (!user) return;
     setExporting("messages");
     try {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("content, from_me, remote_jid, message_type, created_at")
-        .eq("tenant_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const data = await api.get<any[]>("/api/messages");
       if (!data?.length) {
         toast({ title: "Nenhuma mensagem encontrada", variant: "destructive" });
         return;
       }
-
-      downloadCSV(data.map(m => ({
+      downloadCSV(data.map((m: any) => ({
         Conteúdo: m.content,
         Direção: m.from_me ? "Enviada" : "Recebida",
         Contato: m.remote_jid,
         Tipo: m.message_type || "texto",
         Data: m.created_at ? new Date(m.created_at).toLocaleString("pt-BR") : "",
       })), `mensagens_${new Date().toISOString().slice(0, 10)}.csv`);
-
       toast({ title: "Mensagens exportadas! ✅" });
     } catch (error) {
       toast({ title: "Erro ao exportar", variant: "destructive" });
@@ -103,25 +87,18 @@ export default function ExportReports() {
     if (!user) return;
     setExporting("templates");
     try {
-      const { data, error } = await supabase
-        .from("response_templates")
-        .select("shortcut, content, category, is_active, created_at")
-        .eq("tenant_id", user.id);
-
-      if (error) throw error;
+      const data = await api.get<any[]>("/api/templates");
       if (!data?.length) {
         toast({ title: "Nenhum template encontrado", variant: "destructive" });
         return;
       }
-
-      downloadCSV(data.map(t => ({
+      downloadCSV(data.map((t: any) => ({
         Atalho: t.shortcut,
         Conteúdo: t.content,
         Categoria: t.category,
         Ativo: t.is_active ? "Sim" : "Não",
         "Criado em": new Date(t.created_at).toLocaleString("pt-BR"),
       })), `templates_${new Date().toISOString().slice(0, 10)}.csv`);
-
       toast({ title: "Templates exportados! ✅" });
     } catch (error) {
       toast({ title: "Erro ao exportar", variant: "destructive" });

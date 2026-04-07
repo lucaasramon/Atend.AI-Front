@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Copy, Pencil, Trash2, Search, FileText, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Template {
@@ -38,17 +38,14 @@ export default function ClientTemplates() {
 
   const fetchTemplates = async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from("response_templates")
-      .select("*")
-      .eq("tenant_id", user.id)
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast({ title: "Erro ao carregar templates", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const data = await api.get<Template[]>("/api/templates");
       setTemplates(data || []);
+    } catch (error: any) {
+      toast({ title: "Erro ao carregar templates", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -85,25 +82,17 @@ export default function ClientTemplates() {
     }
     const slug = formShortcut.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 
-    if (editingTemplate) {
-      const { error } = await supabase
-        .from("response_templates")
-        .update({ shortcut: slug, content: formContent, category: formCategory })
-        .eq("id", editingTemplate.id);
-      if (error) {
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
-        return;
+    try {
+      if (editingTemplate) {
+        await api.patch(`/api/templates/${editingTemplate.id}`, { shortcut: slug, content: formContent, category: formCategory });
+        toast({ title: "Template atualizado" });
+      } else {
+        await api.post("/api/templates", { shortcut: slug, content: formContent, category: formCategory });
+        toast({ title: "Template criado" });
       }
-      toast({ title: "Template atualizado" });
-    } else {
-      const { error } = await supabase
-        .from("response_templates")
-        .insert({ shortcut: slug, content: formContent, category: formCategory, tenant_id: user.id });
-      if (error) {
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
-        return;
-      }
-      toast({ title: "Template criado" });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
     }
     setDialogOpen(false);
     fetchTemplates();
@@ -111,25 +100,22 @@ export default function ClientTemplates() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja excluir este template? Esta ação não pode ser desfeita.")) return;
-    const { error } = await supabase.from("response_templates").delete().eq("id", id);
-    if (error) {
+    try {
+      await api.delete(`/api/templates/${id}`);
+      toast({ title: "Template removido" });
+      fetchTemplates();
+    } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return;
     }
-    toast({ title: "Template removido" });
-    fetchTemplates();
   };
 
   const toggleActive = async (id: string, currentValue: boolean) => {
-    const { error } = await supabase
-      .from("response_templates")
-      .update({ is_active: !currentValue })
-      .eq("id", id);
-    if (error) {
+    try {
+      await api.patch(`/api/templates/${id}`, { is_active: !currentValue });
+      fetchTemplates();
+    } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return;
     }
-    fetchTemplates();
   };
 
   const copyVariable = (shortcut: string) => {

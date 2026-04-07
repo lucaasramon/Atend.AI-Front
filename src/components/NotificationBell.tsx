@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell, Check, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ClientNotification {
@@ -23,15 +23,8 @@ export default function NotificationBell() {
   const loadNotifications = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from("client_notifications")
-        .select("*")
-        .eq("tenant_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setNotifications((data || []) as ClientNotification[]);
+      const data = await api.get<ClientNotification[]>("/api/notifications/client");
+      setNotifications(data || []);
     } catch (error) {
       console.error("Error loading notifications:", error);
     } finally {
@@ -41,24 +34,14 @@ export default function NotificationBell() {
 
   useEffect(() => {
     loadNotifications();
-
-    if (!user) return;
-    const channel = supabase
-      .channel("client-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "client_notifications", filter: `tenant_id=eq.${user.id}` }, () => loadNotifications())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    const interval = setInterval(loadNotifications, 30_000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const markAllRead = async () => {
     if (!user) return;
     try {
-      await supabase
-        .from("client_notifications")
-        .update({ read: true })
-        .eq("tenant_id", user.id)
-        .eq("read", false);
+      await api.patch("/api/notifications/client/mark-read", {});
       await loadNotifications();
     } catch (error) {
       console.error("Error marking read:", error);

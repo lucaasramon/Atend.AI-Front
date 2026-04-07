@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Zap, Loader2, Users, Globe } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 interface ClientWorkflow {
   id: string;
@@ -18,22 +18,10 @@ export default function Automations() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, company, full_name, plan, status, whatsapp_number, webhook_url")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setClients(data || []);
-      } catch (error) {
-        console.error("Error loading automations:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    api.get<ClientWorkflow[]>("/api/profiles/automations")
+      .then((data) => setClients(data || []))
+      .catch((err) => console.error("Error loading automations:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -82,9 +70,7 @@ export default function Automations() {
                   WhatsApp: {client.whatsapp_number || "Não configurado"}
                 </div>
                 {client.webhook_url && (
-                  <div className="truncate">
-                    Webhook: <span className="font-mono">{client.webhook_url}</span>
-                  </div>
+                  <div className="truncate">Webhook: <span className="font-mono">{client.webhook_url}</span></div>
                 )}
               </div>
             </div>

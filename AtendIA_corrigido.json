@@ -1,0 +1,3971 @@
+{
+  "name": "AtendIA",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "Chat",
+        "operation": "Obter Mídia Em Base64",
+        "instanceName": "={{ $('Global Variables').item.json.instance_name }}",
+        "token": "={{ $('Get Client').item.json.instance_token }}",
+        "options_Create_instance": {}
+      },
+      "id": "ab0fb409-8cab-4c17-99d6-f16b36286384",
+      "name": "Descargar Media",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "position": [
+        1600,
+        1696
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "evolutionApi": {
+          "id": "jMuJkz4ys3zr6IHb",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "801ec600-22ad-4a94-a2b4-ae72eb271df0",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $('Webhook').item.json.body.data.message.conversation || $('Webhook').item.json.body.data.message.extendedTextMessage?.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "08b3cde9-bd3b-41ad-8953-ff78fc76d5e8",
+      "name": "get_message (text)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1600,
+        1360
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-0000-0000-0000-000000000004",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Webhook').item.json.body.data.message.conversation }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-0000-0000-0000-000000000005",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Webhook').item.json.body.data.message.extendedTextMessage?.text }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "extendedText"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-0000-0000-0000-000000000099",
+                    "operator": {
+                      "type": "object",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Webhook').item.json.body.data.message.albumMessage }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "album"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "media"
+        }
+      },
+      "id": "ed032a83-33bf-482f-b1b8-d550acfc8085",
+      "name": "Message Type",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        1360,
+        1504
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "a1b2c3d4-0000-0000-0000-000000000003",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.body.data.key.fromMe }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0000-0000-0000-000000000010",
+      "name": "Ignore own messages",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        800,
+        1520
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bf06bbd5-2ca4-4aa9-bc9a-825a570791ae",
+              "name": "number",
+              "type": "string",
+              "value": "={{ $('Webhook').item.json.body.data.key.remoteJid.split('@')[0] }}"
+            },
+            {
+              "id": "ef7dd1c1-0925-416b-b73e-79ee3ee11e81",
+              "name": "wait_conversation",
+              "type": "string",
+              "value": "300"
+            },
+            {
+              "id": "07b5fd03-4ef0-4e59-b4ef-a354dc2b6893",
+              "name": "max_chat_history",
+              "type": "string",
+              "value": "40"
+            },
+            {
+              "id": "a1b2c3d4-0000-0000-0000-000000000001",
+              "name": "wait_buffer",
+              "type": "string",
+              "value": "5"
+            },
+            {
+              "id": "a1b2c3d4-0000-0000-0000-000000000006",
+              "name": "instance_name",
+              "type": "string",
+              "value": "={{ $('Webhook').item.json.body.instance }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f5a03800-4663-4121-bae5-d9e6b62a187f",
+      "name": "Global Variables",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1040,
+        1520
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "clients",
+          "cachedResultName": "clients"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "instance_name",
+              "value": "={{ $('Global Variables').item.json.instance_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0000-0000-0000-000000000020",
+      "name": "Get Client",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1200,
+        1520
+      ],
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "H7SqUBPAeFpCHDqP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "a1b2c3d4-0000-0000-0000-000000000007",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.active }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0000-0000-0000-000000000021",
+      "name": "Client Active?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1360,
+        1520
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "f11a017f-dc64-4db4-9836-d13d164a62cf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "leftValue": "={{ JSON.parse($json.message.last()).sessionID }}",
+                    "rightValue": "={{ $('Webhook').item.json.body.data.key.id }}"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Ignore"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "4fca4c39-e8bf-490b-8e2e-176c95d9156e",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "before"
+                    },
+                    "leftValue": "={{ JSON.parse($json.message.last()).date_time }}",
+                    "rightValue": "={{ $now.minus($('Global Variables').item.json.wait_buffer, 'seconds') }}"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Continue"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Wait"
+        }
+      },
+      "id": "c2e5b93c-246f-4914-a289-870a1c66fb19",
+      "name": "Buffer Route",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        3248,
+        2048
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{  $('Global Variables').item.json.number }}",
+        "messageData": "={{ JSON.stringify({\n  message   : $json.message ? $json.message : $('get_message (media)').item.json.message,\n  sessionID : $('Webhook').item.json.body.data.key.id,\n  date_time : $node[\"Webhook\"].json.body.data.messageTimestamp.toDateTime('s')\n}) }}\n",
+        "tail": true
+      },
+      "id": "fe805e7a-ed8b-413f-8641-3b0ef678bc6c",
+      "name": "Push to Buffer",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        2848,
+        2064
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "message",
+        "key": "={{  $('Global Variables').item.json.number }}",
+        "options": {}
+      },
+      "id": "ba6c5f0f-6b11-4040-beca-5ef8182c1a46",
+      "name": "Get From Buffer",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        3056,
+        2064
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{  $('Global Variables').item.json.number }}"
+      },
+      "id": "2c7b3e2a-92a2-47a6-8332-dd358189116c",
+      "name": "Delete Buffer",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        3472,
+        2064
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b594f1da-51e8-47a4-a636-7928a73b69f8",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.message.map(m => JSON.parse(m).message).join('\\n') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f043077c-3bba-4ce5-82a4-acbb1d062cfa",
+      "name": "Normalize Buffer",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3680,
+        2064
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {},
+      "id": "b081a8ae-46cd-4e5e-93f0-c5e6fdbd3910",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        3472,
+        1904
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=Media_{{  $('Global Variables').item.json.number }}",
+        "messageData": "={{ (($('Webhook').item.json.body.data.message.albumMessage?.expectedImageCount || 0) + ($('Webhook').item.json.body.data.message.albumMessage?.expectedVideoCount || 0)).toString() }}",
+        "tail": true
+      },
+      "id": "b21c4a02-96a1-4a06-a7c6-517376c4aad3",
+      "name": "Push to Buffer (AlbumGroup)",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        1600,
+        1520
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=Media_{{  $('Global Variables').item.json.number }}",
+        "options": {}
+      },
+      "id": "863c171d-2020-4867-95c0-e9d217ca28e3",
+      "name": "Check AlbumGroup",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        2432,
+        2064
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=Media_{{  $('Global Variables').item.json.number }}",
+        "messageData": "={{ $('Normalize input').item.json.message }}",
+        "tail": true
+      },
+      "id": "9064ca9a-d4bc-46b2-8d72-a8179eb13d8c",
+      "name": "Push Media to Buffer",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        2848,
+        1744
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "131b95f2-cb9f-4d8c-9c2b-ca94383322dd",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.propertyName.length-1 }}",
+              "rightValue": "={{ parseInt($json.propertyName[0]) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "209e156d-980c-432d-bc0c-eb06b51cda09",
+      "name": "Completed?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        3248,
+        1744
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=Media_{{  $('Global Variables').item.json.number }}"
+      },
+      "id": "979213ce-ef2f-4e04-aa19-93840eef63d4",
+      "name": "Delete Media Buffer",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        3472,
+        1728
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b594f1da-51e8-47a4-a636-7928a73b69f8",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.propertyName.slice(1).join('\\n') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f2a36311-219b-490c-aa63-1b8e5de2cbdd",
+      "name": "Normalize MediaGroup Buffer",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3680,
+        1728
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=Media_{{  $('Global Variables').item.json.number }}",
+        "options": {}
+      },
+      "id": "c69d5589-1c09-4d61-ada1-6e72f44685d3",
+      "name": "Get Album From Buffer",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        3056,
+        1744
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "9062d3ba-1151-472f-95e0-42f54cbfb929",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.propertyName }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5d7f7e3d-1c1a-4595-898d-55ba451f8df1",
+      "name": "Album?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2640,
+        1888
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6d7accb-8ef6-4c41-9b0a-9e0b4301dffd",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.message || $json.chatInput }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "636f23ec-9699-41c8-a6ba-a12d6c572565",
+      "name": "Get Message",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3968,
+        1888
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=Chats_{{  $('Global Variables').item.json.number }}"
+      },
+      "id": "3243c606-d0e6-44f6-9833-719fde07b402",
+      "name": "Delete Buffer (chat_history)",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        8496,
+        1952
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Global Variables').item.json.wait_buffer }}"
+      },
+      "id": "55b538b6-9890-4a8f-9b87-4a4228ba95aa",
+      "name": "Wait For User Other Fast Message",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        3472,
+        2224
+      ],
+      "webhookId": "9b345d41-1595-4bc3-bb98-64e44682aa43",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0f3b823-dda9-42e9-936b-4ca4123026ca",
+              "name": "history",
+              "type": "string",
+              "value": "={{ $json.propertyName.slice(-$('Global Variables').item.json.max_chat_history).join('\\n') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3819d43a-9cf1-4b0c-b1fe-b97a1eb26c7e",
+      "name": "Get chat_history",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        5744,
+        1840
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {},
+      "id": "ef1205d1-185b-4831-af3a-d8af587ded4e",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        8496,
+        1808
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "f11a017f-dc64-4db4-9836-d13d164a62cf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "leftValue": "={{ JSON.parse($json.message.last()).sessionID }}",
+                    "rightValue": "={{ $('Webhook').item.json.body.data.key.id }}"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Ignore"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "4fca4c39-e8bf-490b-8e2e-176c95d9156e",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "before"
+                    },
+                    "leftValue": "={{ JSON.parse($json.message.last()).date_time }}",
+                    "rightValue": "={{ $now.minus($('Global Variables').item.json.wait_conversation, 'seconds') }}"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Continue"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Wait"
+        }
+      },
+      "id": "994ce92b-1f39-45e9-9368-b9f4ad488b39",
+      "name": "Buffer (chat_history) Route",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        8240,
+        1824
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Global Variables').item.json.wait_conversation }}"
+      },
+      "id": "789b406a-97dc-4d40-b7ce-1aec3c43a45c",
+      "name": "Wait For end of conversation",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        8496,
+        2128
+      ],
+      "webhookId": "06711a97-b08d-4552-aab8-868b1b8bbc5c",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=Chats_buffer{{  $('Global Variables').item.json.number }}",
+        "messageData": "={{ JSON.stringify({\n  sessionID : $('Webhook').item.json.body.data.key.id,\n  date_time : $node[\"Webhook\"].json.body.data.messageTimestamp.toDateTime('s')\n}) }}\n",
+        "tail": true
+      },
+      "id": "11a09bbb-50ff-46d9-84f1-6972abdd747e",
+      "name": "Push to Buffer (chat_history)",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        7808,
+        1840
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "message",
+        "key": "=Chats_buffer{{  $('Global Variables').item.json.number }}",
+        "options": {}
+      },
+      "id": "8f02508c-cacf-4a22-a7c9-67d34252d8e1",
+      "name": "Get From Buffer(chat_history)",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        8048,
+        1840
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "58794b29-4882-4b19-a677-8e6f18231e36",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        6176,
+        2032
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=Chats_buffer{{  $('Global Variables').item.json.number }}"
+      },
+      "id": "465f5987-2544-4309-ba34-220053240743",
+      "name": "Delete Buffer (chat_history)2",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        8688,
+        1952
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a/event/messages-upsert",
+        "options": {}
+      },
+      "id": "fe6c91d1-0276-4e66-8c3e-33fd79e3b8ff",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        544,
+        1520
+      ],
+      "webhookId": "814266db-b844-4119-8860-4ed59ab5ea18",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "resource": "Chat",
+        "operation": "Procurar Mensagens",
+        "instanceName": "={{ $('Global Variables').item.json.instance_name }}",
+        "token": "={{ $('Get Client').item.json.instance_token }}",
+        "options_Create_instance": {}
+      },
+      "id": "2197de68-b7cc-4804-bdc4-f63927fbcf5c",
+      "name": "Read Messages",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "position": [
+        848,
+        656
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "evolutionApi": {
+          "id": "jMuJkz4ys3zr6IHb",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chat",
+        "operation": "Ler Mensagens",
+        "instanceName": "={{ $('Global Variables').item.json.instance_name }}",
+        "token": "={{ $('Get Client').item.json.instance_token }}",
+        "options_Create_instance": {}
+      },
+      "id": "a573c3e9-1209-442b-b534-417b13393747",
+      "name": "Open session",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "position": [
+        848,
+        464
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "evolutionApi": {
+          "id": "jMuJkz4ys3zr6IHb",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "chat_history",
+          "cachedResultName": "chat_history"
+        },
+        "limit": "={{ $('Global Variables').item.json.max_chat_history }}",
+        "where": {
+          "values": [
+            {
+              "column": "user_whatsapp_number",
+              "value": "={{ $('Global Variables').item.json.number }}"
+            },
+            {
+              "column": "instance_name",
+              "value": "={{ $('Global Variables').item.json.instance_name }}"
+            }
+          ]
+        },
+        "options": {
+          "outputColumns": [
+            "message_text"
+          ]
+        }
+      },
+      "id": "25165cc1-e2f8-426e-9941-818e419269d7",
+      "name": "Get chat_history From DataBase",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        4800,
+        2112
+      ],
+      "retryOnFail": true,
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "H7SqUBPAeFpCHDqP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "message_text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c15cd5b0-a383-4e10-9856-06427fdca99b",
+      "name": "Aggregate all Messges",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        4992,
+        2112
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "761329c9-499f-4328-bc11-835edcfd003c",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.propertyName[0] }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc77e5e0-426c-45b9-a3fc-a5606bc40f47",
+      "name": "chat_history In Buffer?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        4624,
+        1888
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "resource": "Chat",
+        "operation": "Enviar Presença",
+        "instanceName": "={{ $('Global Variables').item.json.instance_name }}",
+        "token": "={{ $('Get Client').item.json.instance_token }}",
+        "options_Create_instance": {}
+      },
+      "id": "2f78ebe0-7943-4c78-8372-f73d41cce2e8",
+      "name": "Writting...",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "position": [
+        1056,
+        848
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "evolutionApi": {
+          "id": "jMuJkz4ys3zr6IHb",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE IF NOT EXISTS clients (\n    instance_name VARCHAR(50) PRIMARY KEY,\n    client_name VARCHAR(100) NOT NULL,\n    system_prompt TEXT NOT NULL,\n    active BOOLEAN DEFAULT true,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\nINSERT INTO clients (instance_name, client_name, system_prompt)\nVALUES (\n    'Ramon',\n    'Dra. Brenna Inácio de Melo Medeiros',\n    '# IDENTIDADE\nVocê é Sofia, a secretária virtual da psicóloga Dra. Brenna Inácio de Melo Medeiros, que atende exclusivamente online.\nSeu papel é recepcionar os pacientes com empatia, cordialidade e profissionalismo, respondendo dúvidas gerais e auxiliando no agendamento de consultas.\n\n# REGRAS DE COMPORTAMENTO\n- Seja sempre gentil, acolhedora e empática — lembre-se que muitos pacientes podem estar em um momento delicado.\n- Use linguagem simples, clara e humana. Evite termos técnicos desnecessários.\n- Nunca dê conselhos psicológicos, diagnósticos ou opiniões clínicas. Isso é exclusividade da Dra. Brenna.\n- Se o paciente demonstrar sofrimento intenso ou crise, acolha com cuidado e oriente a entrar em contato urgente com o CVV (188) ou SAMU (192).\n- Nunca invente informações. Se não souber algo, diga que vai verificar e pedir para a Dra. Brenna entrar em contato.\n- Não discuta política, religião ou assuntos fora do escopo do consultório.\n- Responda sempre em português brasileiro.\n- Mantenha as respostas objetivas e não muito longas.\n\n# O QUE VOCÊ PODE FAZER\n1. Apresentar a Dra. Brenna e os serviços oferecidos\n2. Informar que as consultas são realizadas 100% online (videochamada)\n3. Receber solicitações de agendamento e coletar: nome completo, melhor horário e se é primeira consulta ou retorno\n4. Responder dúvidas frequentes\n5. Encaminhar situações complexas para a própria Dra. Brenna\n\n# INFORMAÇÕES DO CONSULTÓRIO\n- Psicóloga: Dra. Brenna Inácio de Melo Medeiros\n- CRP: 11/15409\n- Modalidade: Atendimento online (videochamada)\n- Abordagem: Terapia Cognitivo-Comportamental (TCC)\n- Valor: R$ 150,00 por sessão\n- Planos de saúde: Não aceita\n- Horários: Segunda a sexta, das 9h às 12h e das 14h às 18h\n\n# DÚVIDAS FREQUENTES\nComo funciona a consulta online? As sessões são realizadas por videochamada, no conforto da sua casa. Você receberá o link antes da consulta.\nQuanto tempo dura a sessão? Geralmente 50 minutos.\nQual o valor? R$ 150,00 por sessão. Não aceitamos plano de saúde.\nQual a abordagem? TCC - Terapia Cognitivo-Comportamental, baseada em evidências científicas.\nQuais os horários? Segunda a sexta, das 9h às 12h e das 14h às 18h.\n\n# FLUXO DE AGENDAMENTO\nQuando o paciente pedir para agendar, colete em sequência (um por vez):\n1. Nome completo\n2. Primeira consulta ou retorno?\n3. Dias e horários de preferência\nDepois diga: Perfeito! Vou passar suas informações para a Dra. Brenna e em breve ela entrará em contato para confirmar o horário.'\n)\nON CONFLICT (instance_name) DO NOTHING;\n\nCREATE TABLE IF NOT EXISTS chat_history (\n    message_id BIGSERIAL PRIMARY KEY,\n    instance_name VARCHAR(50) NOT NULL,\n    user_whatsapp_number VARCHAR(25) NOT NULL,\n    message_text TEXT NOT NULL,\n    message_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\nCREATE INDEX IF NOT EXISTS idx_chat_history_user_timestamp \nON chat_history (instance_name, user_whatsapp_number, message_timestamp);",
+        "options": {}
+      },
+      "id": "3c798e27-474e-4f35-bf56-08e212764d47",
+      "name": "Create Table chat_history",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        736,
+        128
+      ],
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "H7SqUBPAeFpCHDqP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Mensagem",
+        "operation": "Enviar Texto",
+        "instanceName": "={{ $('Global Variables').item.json.instance_name }}",
+        "token": "={{ $('Get Client').item.json.instance_token }}",
+        "numeroDoDestinatario": "={{ $('Global Variables').item.json.number + '@s.whatsapp.net' }}",
+        "mensagem": "={{ $('Agent Response').item.json.response }}",
+        "options_Send_text_message": {}
+      },
+      "id": "d0f872b6-41a9-4ff8-8ee5-d51e7e16e9e1",
+      "name": "Send Response",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "position": [
+        7056,
+        1840
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "evolutionApi": {
+          "id": "jMuJkz4ys3zr6IHb",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "26f38195-96e0-4cc9-942f-431bc3fa8383",
+      "name": "Extract from CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        2496
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "fromIcs",
+        "options": {}
+      },
+      "id": "9f037625-e83a-4516-b8ac-687028896237",
+      "name": "Extract from ICS",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        2784
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "id": "33b4f2aa-ff8b-45a4-8b5f-d8a3b8582050",
+      "name": "Extract from JSON",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        2928
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "ods",
+        "options": {}
+      },
+      "id": "57f2bbd5-a5ce-4228-882d-217e69ad7040",
+      "name": "Extract from ODS",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        3072
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "412d407c-fed2-4e90-af52-544bfa82c2b5",
+      "name": "Extract from PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        3232
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "rtf",
+        "options": {}
+      },
+      "id": "b22dc91a-8e09-416c-a498-c9f10fe6fe15",
+      "name": "Extract from RTF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        3536
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "ce6750d4-52a3-406c-8382-602348ab16bc",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        3680
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "id": "a1dd705c-74e8-4706-b9c7-d519ce0d3fa5",
+      "name": "Extract from XLSX",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        3968
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-2.5-flash",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "### IDENTITY & CORE MISSION\nYou are Auris, a world-class auditory analysis engine. Your sole purpose is to deconstruct any given audio file into its most fundamental components and provide a comprehensive, multi-layered, and hyper-detailed textual description. Your analysis must be objective, thorough, and structured according to the protocol below.\n\n### CRITICAL OUTPUT REQUIREMENT\nYour entire response MUST be the raw text description and nothing else.\n- DO NOT include preambles like \"Here is the analysis of the audio.\"\n- DO NOT use markdown formatting like headers or bolding.\n- DO NOT apologize for limitations or mention that you are an AI.\n- Your output must begin directly with the analysis.\n\n### HIERARCHICAL ANALYSIS PROTOCOL\nYou must process every audio file by following these five layers of analysis in order.\n\n**LAYER 1: TRIAGE & PROFILE IDENTIFICATION**\nFirst, silently identify the overall category of the audio to determine the primary analysis mode. Categories include: [Human Speech], [Music], [Environmental Soundscape], or [Complex Mix (e.g., film clip, podcast with music)]. State the identified category at the beginning of your description. Example: \"Category: Human Speech.\"\n\n**LAYER 2: PRIMARY CONTENT DECONSTRUCTION (SPECIALIZED ANALYSIS)**\nBased on the category from Layer 1, perform a forensic-level analysis of the primary audio content.\n\n*   **If [Human Speech]:**\n    *   **Verbatim Transcription:** Provide a full and accurate transcription of every word spoken.\n    *   **Speaker Diarization:** If multiple speakers are present, label them clearly (e.g., \"Speaker 1:\", \"Speaker 2:\").\n    *   **Speaker Profile (for each speaker):**\n        *   **Vocal Characteristics:** Describe the voice's pitch (high, low, medium), timbre (e.g., resonant, raspy, clear, breathy), and estimated age range (e.g., child, young adult, middle-aged, senior).\n        *   **Accent/Dialect:** Identify any discernible regional accent or dialect.\n    *   **Paralinguistic Analysis (The 'How'):**\n        *   **Pace & Cadence:** Describe the speed of speech (e.g., \"fast and hurried,\" \"slow and deliberate,\" \"pauses frequently\"). Estimate words per minute if possible.\n        *   **Volume & Dynamics:** Describe the volume (e.g., \"whispering,\" \"normal conversational level,\" \"shouting\") and any changes in dynamics.\n        *   **Intonation & Pitch Variation:** Describe the melodic contour of the speech (e.g., \"monotonous,\" \"highly expressive with rising and falling pitch\").\n    *   **Emotional Tone Analysis:** Infer the emotional state of each speaker based on all vocal cues (e.g., \"joyful and excited,\" \"frustrated and tense,\" \"calm and reassuring,\" \"sarcastic\").\n    *   **Intent & Pragmatics (The 'Why'):** Determine the purpose of the speech. Is it a direct command, a question, a narrative story, a complaint, a casual conversation, a formal presentation? This is the most critical analysis for agent instructions.\n\n*   **If [Music]:**\n    *   **Genre & Style:** Identify the genre with precision (e.g., \"Classical Baroque,\" \"Lo-fi Hip Hop,\" \"Industrial Metal\").\n    *   **Instrumentation:** List every audible instrument (e.g., \"acoustic guitar, 808 drum machine, electric piano, female vocals\").\n    *   **Structural Analysis:** Describe the song's structure (e.g., \"Intro, Verse 1, Chorus, Verse 2, Chorus, Bridge, Guitar Solo, Outro\").\n    *   **Musical Elements:** Detail the tempo (estimate BPM), key (major/minor), rhythm, melody, and harmony.\n    *   **Mood & Atmosphere:** Describe the feeling the music evokes (e.g., \"energetic and uplifting,\" \"melancholic and introspective,\" \"suspenseful and tense\").\n\n*   **If [Environmental Soundscape]:**\n    *   **Location Identification:** Infer the physical location from the sounds (e.g., \"Busy downtown street corner during rush hour,\" \"Quiet forest with birdsong,\" \"Crowded indoor cafe\").\n    *   **Sound Source Catalog:** Systematically list and describe every distinct sound. Be specific about its characteristics and spatial position (e.g., \"Distant siren moving from left to right,\" \"Footsteps on wet pavement approaching,\" \"The clinking of ceramic mugs and a nearby espresso machine hiss\").\n\n**LAYER 3: ACOUSTIC ENVIRONMENT ANALYSIS**\nDescribe the \"room\" or space where the audio was recorded.\n*   **Background Noise (Noise Floor):** Identify any constant, low-level sounds (e.g., \"60Hz electrical hum,\" \"HVAC system running,\" \"computer fan,\" \"distant traffic rumble\").\n*   **Ambient Sounds:** Detail any intermittent, secondary sounds that are not part of the primary content (e.g., \"a distant dog bark,\" \"a cough from the speaker,\" \"a phone notification chime\").\n*   **Reverberation & Space:** Describe the acoustic properties of the space. Is it a \"dry\" sound (small, acoustically treated room) or a \"wet\" sound with a long decay (large, empty hall, church, or cave)?\n\n**LAYER 4: TECHNICAL PRODUCTION ANALYSIS**\nDeconstruct the audio file as a recording.\n*   **Recording Quality:** Describe the fidelity (e.g., \"high-fidelity studio recording,\" \"mid-quality phone voice memo,\" \"low-fidelity, compressed audio\").\n*   **Stereo Field:** Is the recording in mono or stereo? If stereo, describe the placement of sounds in the left-right field.\n*   **Dynamic Range:** Is the volume compressed and consistently loud, or is there a natural range between quiet and loud parts?\n*   **Artifacts & Imperfections:** Identify any technical flaws (e.g., \"audible clipping/distortion on peaks,\" \"digital compression artifacts,\" \"hiss from a low-quality microphone,\" \"plosives ('p' and 'b' sounds popping)\").\n\n**LAYER 5: INFERENCE & SYNTHESIS**\nConclude with a brief synthesis of all layers. What is the overall story, context, or purpose of this audio?\n*   **Example (Speech):** \"This is a voice command recorded by a user in a moving car, evidenced by the engine hum and road noise. The user sounds slightly rushed and is giving a direct instruction to the agent.\"\n*   **Example (Music):** \"This is a professionally produced instrumental track intended for a film score, designed to create a sense of mystery and anticipation.\"\n*   **Example (Environment):** \"This audio captures the ambient atmosphere of a public library, intended for relaxation or study.\"",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "01beba5d-c9ec-475d-8099-b370f8c61558",
+      "name": "Analyze audio",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        912,
+        2192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8935452-fe20-469d-a68d-1aad056cb8dd",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $('Descargar Media').item.json.data?.caption ? \"Captions: \" + $('Descargar Media').item.json.data.caption : \"\" }}\nFile name:{{ $('Descargar Media').item.json.data.fileName }}\nFile type:{{ $('Get Mime Type').item.json.fileTypeCategory }}\nExtracted data from file:\n{{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8091712c-e789-4285-8c64-a238cc7baad9",
+      "name": "get_message (File message)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1744,
+        2912
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "e2a226be-4012-4d3c-97ab-c7c305665392",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        1088,
+        2496
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8935452-fe20-469d-a68d-1aad056cb8dd",
+              "name": "message",
+              "type": "string",
+              "value": "=It was not possible to process the file.File type not supported."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9175ac01-b9e0-4e6c-a658-3c87153f3b2f",
+      "name": "get_error_message",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        912,
+        4128
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "sourceData": "binary",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "pageTitle",
+              "cssSelector": "title"
+            },
+            {
+              "key": "metaDescription",
+              "cssSelector": "meta[name=\"description\"]"
+            },
+            {
+              "key": "fullBodyText",
+              "cssSelector": "body",
+              "returnValue": "html"
+            }
+          ]
+        },
+        "options": {
+          "cleanUpText": true
+        }
+      },
+      "id": "e58d5b6b-8039-48b7-974f-fd2e654e9250",
+      "name": "HTML Extract Generic1",
+      "type": "n8n-nodes-base.html",
+      "position": [
+        912,
+        2640
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first item from the input array.\nconst firstItem = items[0];\n\n// Create a new object that has a single key: \"data\".\n// The value of \"data\" will be the entire json object from the input.\n// This gathers all fields (First Name, Last Name, Age, etc.) dynamically.\nconst result = {\n  data: firstItem.json\n};\n\n// Return the newly structured object.\n// It will be outputted as a single item with a 'json' property\n// containing the 'data' object.\nreturn result;"
+      },
+      "id": "d0bee034-2237-4ac8-9024-39dc7047bf3f",
+      "name": "Get ODS data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1088,
+        3072
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "92b9eb97-9318-40a2-b25d-568bb90208f9",
+      "name": "Normalize ODS",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1248,
+        3072
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "900954cb-eeb5-437b-9c13-554fe9ce9eaf",
+      "name": "Normalize CSV",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1248,
+        2496
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b4ab7227-9db9-4c74-aa17-80071ee0a7f0",
+              "name": "data",
+              "type": "string",
+              "value": "=Page title:  {{ $json.pageTitle}}\nMeta description: {{ $json.metaDescription }}\nbody: {{ $json.fullBodyText }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6c3a1bc6-1014-451b-ae44-064c2fe57420",
+      "name": "Normalize HTML",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        2640
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a995aee2-7f17-4184-a931-88bfe26fe5cb",
+      "name": "Normalize ICS",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        2784
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eca757ff-ca0b-4ab7-a974-c98f82979177",
+      "name": "Normalize JSON",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        2928
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "13b1d5b3-4ab5-4b6a-a2c0-83052a86864f",
+      "name": "Normalize PDF",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1248,
+        3216
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "65dacadd-e490-4073-87a5-2b9817514e90",
+      "name": "Normalize RTF",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1248,
+        3536
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8f5a483a-e261-4723-9954-8d47e9e0633b",
+      "name": "Normalize text file",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        3680
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "86856bdc-19e0-471d-b1c6-1d3590eebd3e",
+      "name": "Normalize XML",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        3824
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "xml",
+        "options": {}
+      },
+      "id": "58fc5da7-529e-4543-8f08-bf5651109718",
+      "name": "Extract from XML",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        912,
+        3824
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c93c8492-1afc-4e64-ab3c-ec12432dfab4",
+      "name": "Normalize XLSX",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1248,
+        3968
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first item from the input array.\nconst firstItem = items[0];\n\n// Create a new object that has a single key: \"data\".\n// The value of \"data\" will be the entire json object from the input.\n// This gathers all fields (First Name, Last Name, Age, etc.) dynamically.\nconst result = {\n  data: firstItem.json\n};\n\n// Return the newly structured object.\n// It will be outputted as a single item with a 'json' property\n// containing the 'data' object.\nreturn result;"
+      },
+      "id": "0dedf20d-60de-4fef-b6f6-87c5823a409f",
+      "name": "Get RTF data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1088,
+        3536
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first item from the input array.\nconst firstItem = items[0];\n\n// Create a new object that has a single key: \"data\".\n// The value of \"data\" will be the entire json object from the input.\n// This gathers all fields (First Name, Last Name, Age, etc.) dynamically.\nconst result = {\n  data: firstItem.json\n};\n\n// Return the newly structured object.\n// It will be outputted as a single item with a 'json' property\n// containing the 'data' object.\nreturn result;"
+      },
+      "id": "4c767056-67e1-4124-b7d6-9fc58e8e1158",
+      "name": "Get XLSX data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1088,
+        3968
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "333a436f-c087-4250-a181-40657874959b",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.text }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c709b67d-5fb4-404a-a62f-2b88048ae73d",
+      "name": "Text?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1088,
+        3232
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-2.5-flash-lite",
+          "cachedResultName": "models/gemini-2.5-flash-lite"
+        },
+        "text": "### IDENTITY & CORE MISSION\nYou are Codex, a world-class document analysis engine. Your sole purpose is to deconstruct any given PDF file into its structural, textual, visual, and metadata components, providing a single, comprehensive, and hyper-detailed textual description. Your analysis must be objective, exhaustive, and structured according to the protocol below.\n\n### CRITICAL OUTPUT REQUIREMENT\nYour entire response MUST be the raw text description and nothing else.\n- DO NOT include preambles like \"Here is the analysis of the PDF.\"\n- DO NOT use markdown formatting like headers or bolding unless specifically required for a table transcription.\n- DO NOT apologize for limitations or mention that you are an AI.\n- Your output must begin directly with the analysis.\n\n### HIERARCHICAL ANALYSIS PROTOCOL\nYou must process every PDF file by following these five layers of analysis in order.\n\n**LAYER 1: DOCUMENT TRIAGE & PROFILE IDENTIFICATION**\nFirst, silently identify the overall category of the document to determine the primary analysis mode. Categories include: [Invoice/Receipt], [Academic Paper/Report], [Marketing Brochure/Flyer], [Legal Contract], [Fillable Form], [Presentation Slides], [Book/Manual]. State the identified category at the beginning of your description. Example: \"Category: Invoice/Receipt.\"\n\n**LAYER 2: COMPREHENSIVE CONTENT EXTRACTION**\nThis is the core data extraction phase. Process the document page by page.\n\n*   **A. Verbatim Text Extraction & Structuring:**\n    *   Extract all textual content from the document.\n    *   Preserve the semantic structure. Do not output a single wall of text. Use line breaks to separate paragraphs, headings, and list items as they appear in the original document.\n    *   Prefix major sections with clear labels (e.g., \"HEADING:\", \"PARAGRAPH:\", \"LIST_ITEM:\").\n\n*   **B. Structured Data Analysis (Tables & Forms):**\n    *   **Table Extraction:** If any tables are present, identify them and transcribe their content into a machine-readable format like Markdown. Announce each table clearly.\n        **Format Example:**\n        `--- TABLE 1: PRODUCT DETAILS ---`\n        `| Product ID | Description      | Quantity | Unit Price | Total Price |`\n        `|------------|------------------|----------|------------|-------------|`\n        `| SKU-101    | Blue Widget      | 2        | $10.00     | $20.00      |`\n        `| SKU-203    | Red Gadget       | 5        | $5.50      | $27.50      |`\n        `--- END TABLE 1 ---`\n    *   **Form Field Identification:** If the document is a form, list all fillable fields and their labels (e.g., \"FORM_FIELD: Full Name\", \"FORM_FIELD: Date of Birth\", \"CHECKBOX: I agree to the terms\").\n\n*   **C. Visual Element Deconstruction:**\n    *   For every embedded image, chart, or significant graphic, provide a detailed description.\n    *   Announce each visual element with its page number and a label.\n    *   **Format Example:**\n        `--- VISUAL ELEMENT (Page 3): Bar Chart ---`\n        `Description: A vertical bar chart titled \"Quarterly Sales Growth\". The X-axis represents quarters Q1 to Q4. The Y-axis represents sales in millions. Q3 shows the highest sales at approximately $4.5M. The chart uses a blue and green color palette.`\n        `--- END VISUAL ---`\n\n**LAYER 3: DOCUMENT STRUCTURE & LAYOUT ANALYSIS**\nAnalyze the overall design and organization of the document.\n*   **Document Outline:** If there is a table of contents or clear hierarchical structure (e.g., Chapter 1, Section 1.1), reproduce it as a simple outline.\n*   **Layout & Typography:** Describe the visual presentation.\n    *   **Layout:** Note the number of columns, use of headers, footers, and page numbering.\n    *   **Typography:** Describe the primary font styles used (e.g., \"serif font for body text, sans-serif for headings\"), font sizes, and use of bolding or italics for emphasis.\n    *   **Color Scheme:** Identify the dominant colors used for text, backgrounds, and graphical elements.\n\n**LAYER 4: METADATA & FILE FORENSICS**\nExtract the non-visible, technical information embedded within the PDF file.\n*   **File Metadata:** List all available metadata fields.\n    *   `Title: [Extracted Title]`\n    *   `Author: [Extracted Author]`\n    *   `Subject: [Extracted Subject]`\n    *   `Keywords: [Extracted Keywords]`\n    *   `Creator Application: [e.g., Microsoft Word, Adobe InDesign CC]`\n    *   `PDF Producer: [e.g., Adobe PDF Library]`\n    *   `Creation Date: [Extracted Date]`\n    *   `Modification Date: [Extracted Date]`\n*   **File Properties:**\n    *   `Page Count: [Total number of pages]`\n    *   `Page Size: [e.g., 8.5 x 11 inches (US Letter), A4]`\n    *   `Text Status: [e.g., \"Native/Selectable Text\" or \"Image-based/Scanned Document\"]`\n    *   `Security: [e.g., \"No restrictions,\" \"Password protected,\" \"Printing not allowed\"]`\n\n**LAYER 5: INFERENCE & SYNTHESIS**\nConclude with a holistic synthesis of all layers. What is the document's primary purpose, intended audience, and key message?\n*   **Example (Invoice):** \"This is a standard commercial invoice generated by an automated accounting system. Its purpose is to bill a client for services rendered. The audience is the client's accounts payable department.\"\n*   **Example (Report):** \"This is a formal, professionally formatted annual report intended for company stakeholders. Its purpose is to present financial performance and strategic direction using a combination of detailed text, data tables, and illustrative charts.\"\n*   **Example (Brochure):** \"This is a visually-driven marketing brochure designed to attract new customers. It uses high-quality images, minimal text, and a vibrant color scheme to create an appealing brand image.\"",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "3b1a53ab-6931-474f-b874-d8f3625d88d7",
+      "name": "Analyze document",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        1088,
+        3376
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24b93984-e305-4c11-a856-5fa0bfaaaa79",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $json.content.parts[0].text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bb6fdef1-6866-46df-a4db-37bdf425da52",
+      "name": "Normalize PDF (AI)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1248,
+        3376
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "id": "d0b80691-222e-44ba-acff-7ddde37c14cf",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        912,
+        3376
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eb807b26-c415-42d2-9cef-707825d6fa82",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "00a35d67-d1e9-4209-ad52-823342947eee",
+      "name": "Normalize input",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2240,
+        2064
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {}
+      },
+      "id": "baff4f5d-fa61-43c0-9e56-9caa51c08ae4",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        240,
+        3056
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-2.5-flash",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "### IDENTITY & CORE MISSION\nYou are Scrutator, a world-class multimedia analysis engine. Your sole purpose is to deconstruct any given video file into its most fundamental visual, auditory, and temporal components, providing a single, comprehensive, and hyper-detailed textual description. Your analysis must be objective, exhaustive, and structured according to the protocol below.\n\n### CRITICAL OUTPUT REQUIREMENT\nYour entire response MUST be the raw text description and nothing else.\n- DO NOT include preambles like \"Here is the analysis of the video.\"\n- DO NOT use markdown formatting like headers or bolding.\n- DO NOT apologize for limitations or mention that you are an AI.\n- Your output must begin directly with the analysis.\n\n### HIERARCHICAL ANALYSIS PROTOCOL\nYou must process every video file by following these five layers of analysis in order.\n\n**LAYER 1: TRIAGE & PROFILE IDENTIFICATION**\nFirst, silently identify the overall category of the video to determine the primary analysis modes. Categories include: [User Instruction/Vlog], [Document Scan/Presentation], [Food/Cooking Demo], [Cinematic/Narrative Clip], [Event Recording], [Environmental Scene]. State the identified category at the beginning of your description. Example: \"Category: User Instruction/Vlog.\"\n\n**LAYER 2: DUAL-STREAM DECONSTRUCTION (VISUAL & AUDITORY)**\nAnalyze the visual and audio streams in parallel, noting their interplay.\n\n**A. VISUAL STREAM ANALYSIS:**\nApply the full image analysis protocol to the video's visual content. Describe how these elements **evolve or change throughout the video's duration**.\n*   **Primary Subject(s):** Identify and analyze the main subjects (e.g., a person, a plate of food, a document).\n    *   **If Food:** Identify the dish, all ingredients, cooking methods, and portion size. Describe any actions performed on the food (e.g., \"slicing,\" \"sautéing,\" \"plating\").\n    *   **If Document/Receipt:** State that a document is present and that a full OCR transcription will follow in the audio stream analysis if the user reads it, or in the temporal analysis if it's held up to the camera.\n    *   **If Person:** Describe demographics, appearance, clothing, and actions.\n*   **Background & Context:** Detail the environment, secondary objects, and their spatial relationships.\n\n**B. AUDITORY STREAM ANALYSIS:**\nApply the full audio analysis protocol to the video's soundtrack.\n*   **Primary Content:**\n    *   **If Human Speech:** Provide a **verbatim transcription** with speaker diarization (\"Speaker 1:\", \"Speaker 2:\"). Analyze each speaker's vocal profile, emotional tone, and pragmatic intent (e.g., \"The user's intent is to issue a direct command to the agent\").\n    *   **If Music:** Identify genre, instrumentation, and mood.\n    *   **If Environmental Sounds:** Catalog all distinct sound sources.\n*   **Acoustic Environment & Technical Quality:** Describe background noise, reverberation, and recording quality.\n\n**LAYER 3: TEMPORAL & MOTION ANALYSIS (THE NARRATIVE OF CHANGE)**\nThis is the most critical layer for video. Deconstruct the sequence of events over time.\n*   **Scene & Shot Log:** Create a chronological log of events. Use timestamps to denote significant changes in action, subject, or camera angle.\n    *   **Format Example:**\n        `[00:00-00:03] - Close-up shot of a hand holding a grocery receipt. The camera is slightly shaky.`\n        `[00:04-00:09] - The user (Speaker 1) begins reading the items from the receipt aloud. The camera pans down the list of items.`\n        `[00:10-00:12] - Cut to a wide shot of the kitchen counter, showing the grocery items mentioned.`\n        `[00:13-00:15] - The user points to a carton of orange juice and asks a question.`\n*   **Object & Subject Tracking:** Describe the movement and actions of the primary subjects. (e.g., \"The user walks from the left to the right of the frame, placing a milk carton on the table.\").\n*   **Camera Work:** Describe all camera movements (e.g., \"static tripod shot,\" \"handheld with noticeable shake,\" \"slow pan left,\" \"quick zoom-in on the product label\").\n*   **Editing & Post-Production:** Identify editing techniques. Describe the pacing (e.g., \"fast-paced with quick cuts,\" \"long, uninterrupted take\"), transitions (e.g., \"hard cut,\" \"fade to black,\" \"dissolve\"), and any on-screen graphics, text overlays, or subtitles.\n\n**LAYER 4: TECHNICAL FILE ANALYSIS**\nBriefly describe the technical characteristics of the video file itself.\n*   **Video Quality:** Infer the resolution and clarity (e.g., \"High-definition 1080p,\" \"Standard-definition 480p,\" \"low-resolution, heavily compressed\").\n*   **Frame Rate:** Describe the motion smoothness (e.g., \"smooth 30/60fps,\" \"choppy/low frame rate\").\n*   **Audio-Visual Sync:** Confirm if the audio and video are properly synchronized.\n\n**LAYER 5: INFERENCE & SYNTHESIS**\nConclude with a holistic synthesis of all layers. What is the overall story, context, and purpose of this video?\n*   **Example (User Instruction):** \"This is a user-generated instructional video, recorded on a smartphone. The user is providing a multi-modal command by both showing a receipt and verbally asking the agent to process specific items from it. The intent is direct and task-oriented.\"\n*   **Example (Cooking Demo):** \"This is a segment from a well-edited cooking tutorial. The combination of close-up shots, clear vocal instructions, and background music is designed to be educational and engaging.\"\n*   **Example (Event Recording):** \"This is an amateur, handheld recording of a live music performance in a small, crowded venue, capturing both the performance and the audience's reaction.\"",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "d5efabf0-a406-488d-91ff-9ed17e1c60d3",
+      "name": "Analyze video",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        912,
+        2352
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8935452-fe20-469d-a68d-1aad056cb8dd",
+              "name": "data",
+              "type": "string",
+              "value": "=Media Message Transcription:{{ $json.candidates?.[0]?.content?.parts?.[0]?.text || $json.content?.parts?.[0]?.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1ab2fc21-f2d6-4f05-8610-46a6b219666a",
+      "name": "get_message (Video)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        2352
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8935452-fe20-469d-a68d-1aad056cb8dd",
+              "name": "data",
+              "type": "string",
+              "value": "=Media Message Transcription:{{ $json.candidates?.[0]?.content?.parts?.[0]?.text || $json.content?.parts?.[0]?.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c68c5fb9-9b20-4c2c-bf14-8686070756bf",
+      "name": "get_message (Audio)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        2192
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8935452-fe20-469d-a68d-1aad056cb8dd",
+              "name": "data",
+              "type": "string",
+              "value": "=Media description: {{ $json.content.parts[0].text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2458e66c-8780-480d-b803-0ef936663724",
+      "name": "get_message (Image)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1088,
+        2032
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n  // --- IMPORTANTE ---\n  // Asumimos que el MIME type está en esta ruta.\n  // ¡Verifica que 'item.json.data.mimetype' es correcto para tus datos!\n  // Podría ser 'item.json.mimetype' o similar.\n  const mimetype = $('Descargar Media').first().json.data.mimetype || '';\n\n  let fileTypeCategory = 'other'; // Valor por defecto para tipos no reconocidos\n\n  // Usamos switch(true) para evaluar diferentes condiciones basadas en el mimetype\n  switch (true) {\n    // === Imágenes ===\n    case mimetype.startsWith('image/'):\n      fileTypeCategory = 'image';\n      break;\n\n    // === Audio ===\n    // Incluye mp3 ('audio/mpeg'), ogg, wav, etc.\n    case mimetype.startsWith('audio/'):\n      fileTypeCategory = 'audio';\n      break;\n\n    // === Video ===\n    // Incluye mp4, webm, mov ('video/quicktime'), etc.\n    case mimetype.startsWith('video/'):\n      fileTypeCategory = 'video';\n      break;\n\n    // === Documentos de Texto y Ofimática ===\n    case mimetype === 'application/pdf':\n      fileTypeCategory = 'pdf';\n      break;\n    \n    // Spreadsheets (Excel, ODS, etc.)\n    case mimetype === 'application/vnd.ms-excel':\n    case mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':\n    case mimetype === 'application/vnd.oasis.opendocument.spreadsheet':\n      fileTypeCategory = 'spreadsheet';\n      break;\n\n    // Word Documents\n    case mimetype === 'application/msword':\n    case mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':\n      fileTypeCategory = 'document';\n      break;\n    \n    // Archivos de texto plano (txt, md, log)\n    case mimetype === 'text/plain':\n      fileTypeCategory = 'text';\n      break;\n\n    case mimetype === 'text/csv':\n      fileTypeCategory = 'csv';\n      break;\n\n    case mimetype === 'text/html':\n      fileTypeCategory = 'html';\n      break;\n    \n    case mimetype === 'application/rtf':\n      fileTypeCategory = 'rtf';\n      break;\n\n    // === Datos Estructurados ===\n    case mimetype === 'application/json':\n      fileTypeCategory = 'json';\n      break;\n\n    case mimetype === 'application/xml':\n    case mimetype === 'text/xml':\n      fileTypeCategory = 'xml';\n      break;\n\n    // === Otros ===\n    case mimetype === 'text/calendar': // para .ics\n      fileTypeCategory = 'ics';\n      break;\n  }\n\n  // Añadimos la nueva propiedad 'fileTypeCategory' al objeto json del item\n  item.json.fileTypeCategory = fileTypeCategory;\n  \n  // Añadimos el item modificado al array de resultados\n  results.push(item);\n}\n\n// Devolvemos el array con todos los items modificados\nreturn results;"
+      },
+      "id": "de79af64-29d7-4114-8369-cc86f4ab453a",
+      "name": "Get Mime Type",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        448,
+        3056
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "1919febf-c06b-41d1-a02c-1082f2e444e4",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "image"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "51250085-0cb5-4442-b711-d7ef71c3c927",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "audio"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "886256b8-5fa1-470a-a161-24a3d9d28285",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "video"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "video"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "f1aefe24-17fb-4bf8-84fb-949a6802b66e",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "csv"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "csv"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "b09d29b5-b263-4115-963d-d6879de78649",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "html"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "html"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "2a7822f4-889b-41d3-8a1c-7f4405eacb42",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "ics"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ics"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "f09cd376-96df-4f3d-9218-6a918715335a",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "json"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "json"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "1bf5c1f9-38a9-4bc5-8757-b85f98441579",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "ods"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ods"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "4988d14f-4e3f-4494-96b0-a1a9d70a2787",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "pdf"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "pdf"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "f5bc921e-c083-4b12-8167-86a24e39fe5c",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "rtf"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "rtf"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "29251fca-c611-419c-85a2-a9e1ad6bd102",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "text file"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "text file"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "fd1cbb91-f3c6-4b20-91dc-2e490f77fe96",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "xml"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "xml"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "16fc2a80-c341-4a5d-9d50-a1856ffb5242",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.fileTypeCategory }}",
+                    "rightValue": "spreadsheet"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "spreadsheet"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "25f33276-65ff-4bb1-8ff3-53c331a98074",
+      "name": "Media Type",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        640,
+        2864
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-2.5-flash-lite",
+          "cachedResultName": "models/gemini-2.5-flash-lite"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "114db5ff-5709-4b7b-9106-1b48c3d61f0f",
+      "name": "Analyze Image",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        912,
+        2032
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "68edef6b-4294-426d-8a91-5d991fe7d9f3",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        560,
+        128
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f4cdb2c-9407-4783-83c6-4440faa74f00",
+              "name": "response",
+              "type": "string",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f620df4c-ccc1-4e83-a8e1-b9640bc126f2",
+      "name": "Agent Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        6880,
+        1840
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Context Refiner').item.json.text }}\n\n<mensagem_atual_do_usuario>\n{{ $('Get Message').item.json.message }}\n</mensagem_atual_do_usuario>",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $('Get Client').item.json.system_prompt }}"
+            }
+          ]
+        }
+      },
+      "id": "6ee58081-6115-412f-abe8-2ff3e2fcbcce",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        6576,
+        1840
+      ],
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<Chat_History>\n{{ $json.history }}\n</Chat_History>\n\n<Current_User_Input>\n{{ $('Get Message').item.json.message }}\n</Current_User_Input>",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# SYSTEM ROLE\nYou are a \"Context Retrieval Processor\". You are a backend system, NOT a conversational assistant. You have NO personality.\n\n# INPUTS PROVIDED\n1. <CHAT_HISTORY>: Previous messages and structured file data (JSON, metadata, captions).\n2. <CURRENT_INPUT>: The latest message from the user.\n\n# CORE OBJECTIVE\nCompare the <CURRENT_INPUT> against the <CHAT_HISTORY>. Extract ONLY the factual information required to answer the current input.\n\n# PROCESSING RULES (Follow Strictly)\n\n1. **ANALYZE INTENT:** Read <CURRENT_INPUT>. Is the user asking a question, asking for a summary, or referencing a file?\n   - IF the input is just a greeting (e.g., \"Hola\", \"Hello\", \"Are you there?\") OR a generic compliment -> RETURN \"NO_CONTEXT\".\n   - IF the input requires information from the past -> PROCEED to Step 2.\n\n2. **DECODE STRUCTURED DATA:**\n   - Look for patterns like `File name:`, `Captions:`, and `Extracted data:`.\n   - **CRITICAL:** Connect the \"File name\" to its \"Extracted data\".\n   - *Example:* If history has \"File: invoice.pdf\" and \"Extracted: Total $50\", and user asks \"How much?\", you must extract: \"File invoice.pdf shows a total of $50\".\n\n3. **RESOLVE PRONOUNS:**\n   - If user asks \"What does **it** say?\" or \"Who is **he**?\", look in the <CHAT_HISTORY> to identify what \"it\" or \"he\" refers to. Extract that specific reference.\n\n4. **FILTERING:**\n   - Ignore polite conversation in history (e.g., \"Thank you\", \"Good morning\").\n   - Ignore metadata that is not requested (e.g., MIME types or raw variable names like `$json`) unless specifically asked for.\n\n# OUTPUT RULES\n- Output **ONLY** the facts.\n- Do NOT use conversational filler words (e.g., \"I found this...\", \"The context is...\").\n- Do NOT output markdown code blocks unless the extracted data is code.\n- If no relevant facts are found for the specific input -> RETURN \"NO_CONTEXT\".\n\n# FINAL RESPONSE\n(Output only the extracted facts or NO_CONTEXT)"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "ae175f2c-963a-4fca-a16d-e1c87695158e",
+      "name": "Context Refiner",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        6176,
+        1840
+      ],
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=Chats_{{ $('Global Variables').item.json.number }}",
+        "messageData": "={{ $json.message_text.join('\\n') }}",
+        "tail": true
+      },
+      "id": "441f266c-28e3-4580-bdb5-b29764f45d0a",
+      "name": "Push to chat_history",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        5408,
+        2016
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=Chats_{{ $('Global Variables').item.json.number }}",
+        "messageData": "=.",
+        "tail": true
+      },
+      "id": "54989e99-e063-44ed-bcca-acf258472243",
+      "name": "Push first message to chat_history",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        5408,
+        2208
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=Chats_{{  $('Global Variables').item.json.number }}",
+        "options": {}
+      },
+      "id": "e91fe306-ca20-4ade-91f7-d1df570e61e6",
+      "name": "Get chat_history1",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        4384,
+        1888
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=Chats_{{ $('Global Variables').item.json.number }}",
+        "messageData": "=User: {{ $('Get Message').item.json.message }}\nAgent: {{ $('Agent Response').item.json.response }}",
+        "tail": true
+      },
+      "id": "427d5b66-5831-4afa-b383-551ec242fe5d",
+      "name": "Push message chat_history (User And Agent)",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        7232,
+        1840
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "Nq1BWvItHpqBm6yD",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "chat_history",
+          "cachedResultName": "chat_history"
+        },
+        "columns": {
+          "value": {
+            "message_text": "=User: {{ $('Get Message').item.json.message }}\nAgent: {{ $('Agent Response').item.json.response }}",
+            "user_whatsapp_number": "={{ $('Global Variables').item.json.number }}",
+            "instance_name": "={{ $('Global Variables').item.json.instance_name }}"
+          },
+          "schema": [
+            {
+              "id": "message_id",
+              "type": "number",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "message_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "instance_name",
+              "type": "string",
+              "display": true,
+              "required": true,
+              "displayName": "instance_name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_whatsapp_number",
+              "type": "string",
+              "display": true,
+              "required": true,
+              "displayName": "user_whatsapp_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_text",
+              "type": "string",
+              "display": true,
+              "required": true,
+              "displayName": "message_text",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_timestamp",
+              "type": "dateTime",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "message_timestamp",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "type": "dateTime",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "created_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ea7b7998-a89c-4b7f-a8c3-30f69791aece",
+      "name": "Add Messages to chat_history (User And Agent)",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        7440,
+        1840
+      ],
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "H7SqUBPAeFpCHDqP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Name"
+            },
+            {
+              "name": "Number"
+            },
+            {
+              "name": "ID"
+            }
+          ]
+        }
+      },
+      "id": "ff0b2d15-301c-44b7-8546-9ce87c586a90",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        608,
+        672
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "AkphZnHnLgUYVWdh",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/AkphZnHnLgUYVWdh",
+          "cachedResultName": "AtendIA"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Number",
+              "displayName": "Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "52f9f32f-c628-47d8-b264-d16db0bd191f",
+      "name": "Parallel Writing status",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        704,
+        1296
+      ],
+      "typeVersion": 1.3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "b2408bb8-21be-4afc-bff7-115829f5db60",
+      "name": "Google Gemini Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        6576,
+        2032
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "82e41117-63bf-4cac-9c5f-3fd3e0401add",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        848,
+        848
+      ],
+      "webhookId": "65187612-7e5b-4a76-8465-7bd694e3e172",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "a1b2c3d4-0000-0000-0000-000000000002",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f95ec3e6-8d94-49f8-b7fd-0fb22e3af87e",
+      "name": "chat_history in DataBase?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        5200,
+        2112
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "content": "## 1. Database Setup\nCreates the `chat_history` table in PostgreSQL. Execute this node manually **once** before activating the workflow.",
+        "height": 320,
+        "width": 512,
+        "color": 7
+      },
+      "id": "87ac2423-793b-47dd-86e8-d58086a9426e",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 2. Parallel UX Handling\nManages user experience (Read receipts, 'Typing...' status) in parallel using a sub-workflow to avoid adding latency to the main AI processing logic.",
+        "height": 688,
+        "width": 832,
+        "color": 7
+      },
+      "id": "7746a1ad-78f2-42d1-a828-f08cc1556ec8",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        368
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 3. Webhook & Configuration\nReceives the Evolution API payload and defines global variables (Buffer wait time, Cache duration, History limit).",
+        "height": 752,
+        "width": 1440,
+        "color": 7
+      },
+      "id": "10658bed-1922-42f7-8887-cf9685ee39c4",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        1104
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 4. Media Normalization\nDetects media types (Images, Audio, Documents) and downloads/converts them into a format compatible with the AI Agent.",
+        "height": 2400,
+        "width": 1840,
+        "color": 7
+      },
+      "id": "f8634100-3a0c-4cbd-a99c-1756b15d9f92",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        48,
+        2000
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 5. Smart Input Buffering\nUses Redis to:\n1. Group **Album files** into a single input.\n2. Debounce **Text messages** (waits X seconds) to prevent fragmented AI responses.",
+        "height": 1072,
+        "width": 2080,
+        "color": 7
+      },
+      "id": "61f861d1-2d73-47ba-8dd7-f1711c8ae477",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2128,
+        1520
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 6. Hybrid Memory Retrieval\nOptimized fetch strategy: Checks Redis (fast cache) for recent history first. If empty, falls back to PostgreSQL (permanent storage).",
+        "height": 720,
+        "width": 1600,
+        "color": 7
+      },
+      "id": "d5160cb6-9681-40da-b30d-a4eedab728f1",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4320,
+        1712
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 7. Context Refinement & Generation\n1. **Refiner Agent:** Summarizes chat history to save tokens and reduce context rot.\n2. **Main Agent:** Generates the final response.\n3. **Sync:** Saves the interaction to both PostgreSQL and the Redis buffer.",
+        "height": 608,
+        "width": 1600,
+        "color": 7
+      },
+      "id": "4010e6e1-9835-471d-9548-a131930523c5",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        6048,
+        1696
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 8. Cache Lifecycle Manager\nKeeps the conversation active in Redis for a specific duration (e.g., 300s) after the last message to ensure high-speed retrieval.",
+        "height": 640,
+        "width": 1184,
+        "color": 7
+      },
+      "id": "90a9684c-72d2-4782-84a1-0d0d5abaa440",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        7728,
+        1696
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Core Configuration\nControl the buffering and memory logic here:\n\n*   **wait_buffer**: The debounce window (in seconds). The workflow waits this long for subsequent text messages to group them into a single AI prompt.\n*   **wait_conversation**: Redis TTL (in seconds). How long the active conversation stays in the \"Hot Cache\" after the last message.\n*   **max_chat_history**: The hard limit of past messages to fetch from PostgreSQL (Cold Storage) when the cache is empty.",
+        "height": 464,
+        "width": 400,
+        "color": 3
+      },
+      "id": "83897b2d-3cdf-47a3-bf22-93fc4583ace5",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        880,
+        1232
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Advanced Evolution API Agent with Redis Buffering & Context Refinement\n\nThis production-ready template builds a high-performance WhatsApp chatbot using Evolution API. It solves common AI bot issues—latency, fragmented messages, and token costs—by implementing a hybrid memory architecture (Redis + PostgreSQL) and a multi-stage AI pipeline.\n\n### How it works\n1. **Parallel Ingestion:** The workflow triggers on new messages via Evolution API. A parallel branch immediately handles \"typing...\" status and read receipts to optimize perceived latency.\n2. **Intelligent Buffering:** Incoming messages are routed to Redis buffers. The system distinguishes between **Media Albums** (waiting for all files) and **Rapid Texts** (debouncing inputs for 5s) to consolidate user intent into a single prompt.\n3. **Hybrid Memory Retrieval:** Chat history is fetched from Redis (hot cache) for speed. If the cache expires, it falls back to PostgreSQL (persistent storage).\n4. **Context Optimization:** A fast \"Context Refiner\" model distills the chat history, passing only relevant context to the Main Agent. This prevents \"context rot\" and reduces token costs.\n5. **Execution & Sync:** The Main Agent generates the response. Finally, the conversation is saved to PostgreSQL and refreshed in the Redis cache.\n\n### Setup\n- [ ] **Install the Node:** Go to `Settings &gt; Community Nodes` in n8n and install `n8n-nodes-evolution-api`.\n- [ ] **Credentials:** Configure credentials for Redis, PostgreSQL, and your AI provider (e.g., OpenAI/Gemini).\n- [ ] **Database:** Execute the \"Create Table\" node once to initialize the `chat_history` table in PostgreSQL.\n- [ ] **Evolution API:** Set your `instanceName` and `apikey` in the Webhook node.\n- [ ] **Configuration:** Adjust parameters in the \"Global Variables\" node (Buffer Wait Time, Cache TTL, History Limit).\n- [ ] **Models:** Select a fast model for the Context Refiner and a capable model for the Main Agent.",
+        "height": 1070,
+        "width": 388
+      },
+      "id": "39985abd-6802-47c4-bc74-5d9fa46ce42b",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 💡 Need Assistance?\n\nIf you’d like help customizing or extending this workflow, feel free to reach out:  \n\n📧 Email: [johnsilva11031@gmail.com](mailto:johnsilva11031@gmail.com)  \n🔗 LinkedIn: [John Alejandro Silva Rodríguez](https://www.linkedin.com/in/john-alejandro-silva-rodriguez-48093526b/)",
+        "height": 208,
+        "width": 368,
+        "color": 2
+      },
+      "id": "a8530fa1-4581-46d6-add6-ff4499b2f28a",
+      "name": "Sticky Note15",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1360,
+        848
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Writting...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text?": {
+      "main": [
+        [
+          {
+            "node": "Normalize PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Album?": {
+      "main": [
+        [
+          {
+            "node": "Push Media to Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Push to Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Ignore own messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore own messages": {
+      "main": [
+        [
+          {
+            "node": "Global Variables",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parallel Writing status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client": {
+      "main": [
+        [
+          {
+            "node": "Client Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Active?": {
+      "main": [
+        [
+          {
+            "node": "Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Normalize CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completed?": {
+      "main": [
+        [
+          {
+            "node": "Delete Media Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Media Type": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from CSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTML Extract Generic1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from ICS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from ODS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from PDF",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Extract from RTF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from XML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get_error_message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Message": {
+      "main": [
+        [
+          {
+            "node": "Get chat_history1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buffer Route": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait For User Other Fast Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get ODS data": {
+      "main": [
+        [
+          {
+            "node": "Normalize ODS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get RTF data": {
+      "main": [
+        [
+          {
+            "node": "Normalize RTF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type": {
+      "main": [
+        [
+          {
+            "node": "get_message (text)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get_message (text)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Descargar Media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Descargar Media",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Push to Buffer (AlbumGroup)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image": {
+      "main": [
+        [
+          {
+            "node": "get_message (Image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "get_message (Audio)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze video": {
+      "main": [
+        [
+          {
+            "node": "get_message (Video)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Buffer": {
+      "main": [
+        [
+          {
+            "node": "Normalize Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Mime Type": {
+      "main": [
+        [
+          {
+            "node": "Media Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get XLSX data": {
+      "main": [
+        [
+          {
+            "node": "Normalize XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize CSV": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize ICS": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize ODS": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize PDF": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize RTF": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize XML": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Response": {
+      "main": [
+        [
+          {
+            "node": "Push message chat_history (User And Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize HTML": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize JSON": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize XLSX": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Buffer": {
+      "main": [
+        [
+          {
+            "node": "Get From Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Get Mime Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Media": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get From Buffer": {
+      "main": [
+        [
+          {
+            "node": "Buffer Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "Check AlbumGroup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document": {
+      "main": [
+        [
+          {
+            "node": "Normalize PDF (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check AlbumGroup": {
+      "main": [
+        [
+          {
+            "node": "Album?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from ICS": {
+      "main": [
+        [
+          {
+            "node": "Normalize ICS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from ODS": {
+      "main": [
+        [
+          {
+            "node": "Get ODS data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from PDF": {
+      "main": [
+        [
+          {
+            "node": "Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from RTF": {
+      "main": [
+        [
+          {
+            "node": "Get RTF data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from XML": {
+      "main": [
+        [
+          {
+            "node": "Normalize XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get chat_history": {
+      "main": [
+        [
+          {
+            "node": "Context Refiner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Variables": {
+      "main": [
+        [
+          {
+            "node": "Get Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Buffer": {
+      "main": [
+        [
+          {
+            "node": "Get Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Normalize text file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from JSON": {
+      "main": [
+        [
+          {
+            "node": "Normalize JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from XLSX": {
+      "main": [
+        [
+          {
+            "node": "Get XLSX data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get chat_history1": {
+      "main": [
+        [
+          {
+            "node": "chat_history In Buffer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_error_message": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize PDF (AI)": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_message (text)": {
+      "main": [
+        [
+          {
+            "node": "Push to Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Media Buffer": {
+      "main": [
+        [
+          {
+            "node": "Normalize MediaGroup Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize text file": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_message (Audio)": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_message (Image)": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_message (Video)": {
+      "main": [
+        [
+          {
+            "node": "get_message (File message)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Media to Buffer": {
+      "main": [
+        [
+          {
+            "node": "Get Album From Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to chat_history": {
+      "main": [
+        [
+          {
+            "node": "Get chat_history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate all Messges": {
+      "main": [
+        [
+          {
+            "node": "chat_history in DataBase?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Album From Buffer": {
+      "main": [
+        [
+          {
+            "node": "Completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Extract Generic1": {
+      "main": [
+        [
+          {
+            "node": "Normalize HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chat_history In Buffer?": {
+      "main": [
+        [
+          {
+            "node": "Get chat_history",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get chat_history From DataBase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Context Refiner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chat_history in DataBase?": {
+      "main": [
+        [
+          {
+            "node": "Push to chat_history",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Push first message to chat_history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_message (File message)": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buffer (chat_history) Route": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Buffer (chat_history)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait For end of conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize MediaGroup Buffer": {
+      "main": [
+        [
+          {
+            "node": "Get Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Buffer (chat_history)": {
+      "main": [
+        [
+          {
+            "node": "Delete Buffer (chat_history)2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For end of conversation": {
+      "main": [
+        [
+          {
+            "node": "Get From Buffer(chat_history)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get From Buffer(chat_history)": {
+      "main": [
+        [
+          {
+            "node": "Buffer (chat_history) Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Buffer (chat_history)": {
+      "main": [
+        [
+          {
+            "node": "Get From Buffer(chat_history)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get chat_history From DataBase": {
+      "main": [
+        [
+          {
+            "node": "Aggregate all Messges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For User Other Fast Message": {
+      "main": [
+        [
+          {
+            "node": "Get From Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Open session",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Messages",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push first message to chat_history": {
+      "main": [
+        [
+          {
+            "node": "Get chat_history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Create Table chat_history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push message chat_history (User And Agent)": {
+      "main": [
+        [
+          {
+            "node": "Add Messages to chat_history (User And Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Messages to chat_history (User And Agent)": {
+      "main": [
+        [
+          {
+            "node": "Push to Buffer (chat_history)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "32d4405a-26e8-4110-bd24-6e396437eb5f",
+  "meta": {
+    "instanceId": "30715ec14f3441646291a50ffac1c9d3bc836407431082c57166a88631747ccf"
+  },
+  "id": "AkphZnHnLgUYVWdh",
+  "tags": []
+}

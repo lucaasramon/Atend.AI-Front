@@ -127,9 +127,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg gradient-primary">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
             <span className="text-xl font-bold tracking-tight">AtendIA</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
@@ -308,9 +306,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md gradient-primary flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 text-primary-foreground" />
-              </div>
+              <img src="/logo.png" alt="Logo" className="w-7 h-7 rounded-md object-contain" />
               <span className="font-semibold">AtendIA</span>
             </div>
             <p className="text-sm text-muted-foreground">© 2026 AtendIA. Todos os direitos reservados.</p>

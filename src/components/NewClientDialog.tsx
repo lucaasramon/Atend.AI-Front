@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,10 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { User, Bot, Zap, Shield, Upload, FileText, X, Plus, HelpCircle, Loader2, CheckCircle2, Copy, Eye, EyeOff } from "lucide-react";
+import { User, Bot, Zap, Shield, Upload, FileText, X, Plus, HelpCircle, Loader2, CheckCircle2, Copy, Eye, EyeOff, Pencil, Wifi, WifiOff, RefreshCw, Smartphone } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 const clientSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -20,27 +19,74 @@ const clientSchema = z.object({
   company: z.string().trim().min(2, "Empresa deve ter pelo menos 2 caracteres").max(100),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
   plan: z.string().min(1, "Selecione um plano"),
-  systemPrompt: z.string().trim().min(10, "Prompt deve ter pelo menos 10 caracteres").max(5000),
+  instanceName: z.string().trim().min(2, "Nome da instância deve ter pelo menos 2 caracteres")
+    .max(50)
+    .regex(/^[a-zA-Z0-9_-]+$/, "Use apenas letras, números, _ ou -"),
+  systemPrompt: z.string().trim().min(10, "Prompt deve ter pelo menos 10 caracteres").max(20000),
   varEmpresa: z.string().trim().min(1, "Obrigatório"),
   varHorario: z.string().trim().min(1, "Obrigatório"),
   varTransbordo: z.string().trim().min(10, "Telefone inválido").max(20),
   webhookUrl: z.string().url("URL inválida").optional().or(z.literal("")),
 });
 
+// Ao editar, apenas dados básicos são obrigatórios — IA e automação são opcionais
+const editSchema = z.object({
+  email: z.string().email("Email inválido"),
+  name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
+  company: z.string().trim().min(2, "Empresa deve ter pelo menos 2 caracteres").max(100),
+  phone: z.string().trim().min(10, "Telefone inválido").max(20),
+  plan: z.string().min(1, "Selecione um plano"),
+  instanceName: z.string().trim()
+    .max(50)
+    .regex(/^[a-zA-Z0-9_-]*$/, "Use apenas letras, números, _ ou -")
+    .optional().or(z.literal("")),
+  systemPrompt: z.string().trim().max(20000).optional().or(z.literal("")),
+  varEmpresa: z.string().trim().optional().or(z.literal("")),
+  varHorario: z.string().trim().optional().or(z.literal("")),
+  varTransbordo: z.string().trim().optional().or(z.literal("")),
+  webhookUrl: z.string().url("URL inválida").optional().or(z.literal("")),
+});
+
 type ClientFormData = z.infer<typeof clientSchema>;
+type EditFormData = z.infer<typeof editSchema>;
+
+export interface EditingProfile {
+  id: string;
+  full_name: string | null;
+  company: string | null;
+  phone: string | null;
+  whatsapp_number: string | null;
+  plan: string;
+  email?: string;
+  instance_name?: string | null;
+  system_prompt?: string | null;
+  webhook_url?: string | null;
+}
 
 interface NewClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClientCreated: () => void;
+  editingProfile?: EditingProfile | null;
 }
 
 interface CreatedResult {
   email: string;
   temp_password: string;
+  profileId: string;
+  instanceName: string;
 }
 
-export default function NewClientDialog({ open, onOpenChange, onClientCreated }: NewClientDialogProps) {
+interface QrState {
+  loading: boolean;
+  base64?: string;
+  connected: boolean;
+  polling: boolean;
+}
+
+export default function NewClientDialog({ open, onOpenChange, onClientCreated, editingProfile }: NewClientDialogProps) {
+  const isEditing = !!editingProfile;
+  const activeSchema = useMemo(() => isEditing ? editSchema : clientSchema, [isEditing]);
   const [activeTab, setActiveTab] = useState("info");
   const [knowledgeFiles, setKnowledgeFiles] = useState<File[]>([]);
   const [faqItems, setFaqItems] = useState<{ question: string; answer: string }[]>([]);
@@ -49,16 +95,20 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
   const [submitting, setSubmitting] = useState(false);
   const [createdResult, setCreatedResult] = useState<CreatedResult | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [qr, setQr] = useState<QrState>({ loading: false, connected: false, polling: false });
+  const [provisioning, setProvisioning] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ClientFormData>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(activeSchema as any),
     defaultValues: {
       email: "",
       name: "",
       company: "",
       phone: "",
       plan: "starter",
+      instanceName: "",
       systemPrompt: "",
       varEmpresa: "",
       varHorario: "",
@@ -67,40 +117,182 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        email: editingProfile?.email ?? "",
+        name: editingProfile?.full_name ?? "",
+        company: editingProfile?.company ?? "",
+        phone: editingProfile?.phone ?? editingProfile?.whatsapp_number ?? "",
+        plan: editingProfile?.plan ?? "starter",
+        instanceName: editingProfile?.instance_name ?? "",
+        systemPrompt: editingProfile?.system_prompt ?? "",
+        varEmpresa: editingProfile?.company ?? "",
+        varHorario: "",
+        varTransbordo: "",
+        webhookUrl: editingProfile?.webhook_url ?? "",
+      });
+      setQr({ loading: false, connected: false, polling: false });
+      setCreatedResult(null);
+      setActiveTab("info");
+    }
+    return () => stopPolling();
+  }, [open, editingProfile]);
+
+  // Polling de status da instância
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  const startPolling = (instanceName: string) => {
+    stopPolling();
+    setQr((q) => ({ ...q, polling: true }));
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await api.get<any>(`/api/evolution/status/${instanceName}`);
+        const state: string = res?.instance?.state ?? res?.state ?? "";
+        if (state === "open") {
+          setQr({ loading: false, connected: true, polling: false });
+          stopPolling();
+          toast.success("WhatsApp conectado com sucesso!");
+        }
+      } catch {
+        // silencioso — continua tentando
+      }
+    }, 5000);
+  };
+
+  const loadQrCode = async (instanceName: string) => {
+    setQr({ loading: true, connected: false, polling: false });
+    try {
+      const res = await api.get<any>(`/api/evolution/qrcode/${instanceName}`);
+      const base64: string = res?.base64 ?? res?.qrcode?.base64 ?? "";
+      if (!base64) {
+        toast.error("QR code não disponível ainda. Tente novamente em instantes.");
+        setQr({ loading: false, connected: false, polling: false });
+        return;
+      }
+      setQr({ loading: false, base64, connected: false, polling: true });
+      startPolling(instanceName);
+    } catch (e: any) {
+      toast.error(`Erro ao carregar QR code: ${e.message}`);
+      setQr({ loading: false, connected: false, polling: false });
+    }
+  };
+
+  const handleProvision = async () => {
+    const instanceName = form.getValues("instanceName");
+    const systemPrompt = form.getValues("systemPrompt");
+    const profileId = isEditing ? editingProfile!.id : createdResult?.profileId;
+
+    if (!instanceName || instanceName.length < 2) {
+      toast.error("Defina o nome da instância antes de provisionar");
+      return;
+    }
+    if (!profileId) {
+      toast.error("Salve o cliente antes de provisionar a instância");
+      return;
+    }
+
+    setProvisioning(true);
+    try {
+      await api.post(`/api/evolution/provision/${profileId}`, {
+        instance_name: instanceName,
+        system_prompt: systemPrompt,
+      });
+      toast.success("Instância criada! Escaneie o QR code para conectar o WhatsApp.");
+      await loadQrCode(instanceName);
+    } catch (e: any) {
+      toast.error(`Erro ao provisionar: ${e.message}`);
+    } finally {
+      setProvisioning(false);
+    }
+  };
+
   const onSubmit = async (data: ClientFormData) => {
     setSubmitting(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke("create-client", {
-        body: {
-          email: data.email,
+      if (isEditing && editingProfile) {
+        const instanceName = data.instanceName || editingProfile.instance_name || "";
+
+        // 1. Atualiza profile no banco
+        await api.patch(`/api/profiles/${editingProfile.id}`, {
           full_name: data.name,
           company: data.company,
           phone: data.phone,
           plan: data.plan,
-          system_prompt: data.systemPrompt,
+          system_prompt: data.systemPrompt || undefined,
           webhook_url: data.webhookUrl || null,
           whatsapp_number: data.phone,
-        },
-      });
+          instance_name: instanceName || undefined,
+        });
 
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
+        // 2. Se tem instance_name: provisiona/sincroniza no Evolution + n8n
+        if (instanceName) {
+          try {
+            // provision faz upsert — cria se não existir, atualiza se existir
+            await api.post(`/api/evolution/provision/${editingProfile.id}`, {
+              instance_name: instanceName,
+              system_prompt: data.systemPrompt || undefined,
+            });
+            toast.success(`${data.company} atualizado e sincronizado com o n8n!`);
+          } catch (e: any) {
+            toast.warning(`Dados salvos, mas falha na sincronização com n8n: ${e.message}`);
+          }
+        } else {
+          toast.success(`${data.company} atualizado com sucesso!`);
+        }
 
-      setCreatedResult({
-        email: data.email,
-        temp_password: result.temp_password,
-      });
-
-      onClientCreated();
-      toast.success(`${data.company} criado com sucesso!`);
+        onClientCreated();
+        setActiveTab("automation");
+      } else {
+        const result = await api.post<{ id: string; email: string; temp_password: string }>(
+          "/api/auth/create-client",
+          {
+            email: data.email,
+            full_name: data.name,
+            company: data.company,
+            phone: data.phone,
+            plan: data.plan,
+            system_prompt: data.systemPrompt,
+            webhook_url: data.webhookUrl || null,
+            whatsapp_number: data.phone,
+          }
+        );
+        onClientCreated();
+        toast.success(`${data.company} criado com sucesso!`);
+        setCreatedResult({
+          email: data.email,
+          temp_password: result.temp_password,
+          profileId: result.id,
+          instanceName: data.instanceName,
+        });
+        // Provisiona instância automaticamente
+        setProvisioning(true);
+        try {
+          await api.post(`/api/evolution/provision/${result.id}`, {
+            instance_name: data.instanceName,
+            system_prompt: data.systemPrompt,
+          });
+          await loadQrCode(data.instanceName);
+        } catch (e: any) {
+          toast.warning(`Cliente criado, mas falha ao provisionar instância: ${e.message}`);
+        } finally {
+          setProvisioning(false);
+        }
+      }
     } catch (error: any) {
-      toast.error(`Erro ao criar cliente: ${error.message}`);
+      toast.error(isEditing ? `Erro ao atualizar cliente: ${error.message}` : `Erro ao criar cliente: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   };
 
   const resetAndClose = () => {
+    stopPolling();
     form.reset();
     setKnowledgeFiles([]);
     setFaqItems([]);
@@ -109,6 +301,7 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
     setActiveTab("info");
     setCreatedResult(null);
     setShowPassword(false);
+    setQr({ loading: false, connected: false, polling: false });
     onOpenChange(false);
   };
 
@@ -135,8 +328,8 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
     if (idx > 0) setActiveTab(order[idx - 1]);
   };
 
-  // Show credentials after creation
-  if (createdResult) {
+  // Tela de credenciais criadas (modo criação — após submit)
+  if (createdResult && activeTab !== "automation") {
     return (
       <Dialog open={open} onOpenChange={() => resetAndClose()}>
         <DialogContent className="sm:max-w-md bg-card border-border">
@@ -180,7 +373,12 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
               ⚠️ Salve estas credenciais agora. A senha temporária não poderá ser visualizada novamente.
             </p>
           </div>
-          <Button onClick={resetAndClose} className="w-full">Fechar</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setActiveTab("automation")} className="flex-1">
+              <Smartphone className="w-4 h-4 mr-2" /> Conectar WhatsApp
+            </Button>
+            <Button onClick={resetAndClose} className="flex-1">Fechar</Button>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -190,9 +388,13 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[620px] bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-foreground text-lg">Novo Cliente + Automação</DialogTitle>
+          <DialogTitle className="text-foreground text-lg flex items-center gap-2">
+            {isEditing ? <><Pencil className="w-4 h-4" /> Editar Cliente</> : "Novo Cliente + Automação"}
+          </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            Configure os dados do cliente, o cérebro da IA e a automação em um só lugar.
+            {isEditing
+              ? "Atualize os dados do cliente, configurações de IA e automação."
+              : "Configure os dados do cliente, o cérebro da IA e a automação em um só lugar."}
           </DialogDescription>
         </DialogHeader>
 
@@ -208,15 +410,15 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                 ))}
               </TabsList>
 
-              {/* Tab 1: Dados do Cliente */}
+              {/* ── ABA: DADOS ── */}
               <TabsContent value="info" className="space-y-4 mt-4">
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-muted-foreground text-xs">Email do cliente</FormLabel>
-                    <FormControl><Input placeholder="cliente@empresa.com" className="bg-muted/20 border-border" {...field} /></FormControl>
-                    <FormDescription className="text-xs text-muted-foreground/70">
-                      O cliente usará este email para fazer login.
-                    </FormDescription>
+                    <FormControl><Input placeholder="cliente@empresa.com" className="bg-muted/20 border-border" disabled={isEditing} {...field} /></FormControl>
+                    {isEditing
+                      ? <FormDescription className="text-xs text-muted-foreground/70">O email não pode ser alterado após o cadastro.</FormDescription>
+                      : <FormDescription className="text-xs text-muted-foreground/70">O cliente usará este email para fazer login.</FormDescription>}
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -257,22 +459,29 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                     <FormMessage />
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="instanceName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground text-xs">Nome da instância (Evolution)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="AtendIA-EmpresaX" className="bg-muted/20 border-border font-mono text-xs"
+                        disabled={isEditing && !!editingProfile?.instance_name} {...field} />
+                    </FormControl>
+                    <FormDescription className="text-xs text-muted-foreground/70">
+                      Identificador único no Evolution API. Ex: <span className="font-mono">AtendIA-EmpresaX</span>
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </TabsContent>
 
-              {/* Tab 2: Cérebro da IA */}
+              {/* ── ABA: IA ── */}
               <TabsContent value="ai" className="space-y-4 mt-4">
                 <FormField control={form.control} name="systemPrompt" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-muted-foreground text-xs">System Prompt</FormLabel>
-                    <FormDescription className="text-xs text-muted-foreground/70">
-                      Instrução principal que define o comportamento da IA para este cliente.
-                    </FormDescription>
+                    <FormDescription className="text-xs text-muted-foreground/70">Instrução principal que define o comportamento da IA para este cliente.</FormDescription>
                     <FormControl>
-                      <Textarea
-                        placeholder="Você é o assistente virtual da [Empresa]. Ajude clientes a..."
-                        className="bg-muted/20 border-border min-h-[100px] font-mono text-xs"
-                        {...field}
-                      />
+                      <Textarea placeholder="Você é o assistente virtual da [Empresa]. Ajude clientes a..." className="bg-muted/20 border-border min-h-[100px] font-mono text-xs" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -301,28 +510,16 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                   </FormItem>
                 )} />
 
-                {/* Base de Conhecimento */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5" />
-                      Base de Conhecimento (RAG)
+                      <FileText className="w-3.5 h-3.5" /> Base de Conhecimento (RAG)
                     </label>
                     <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={() => fileInputRef.current?.click()}>
                       <Upload className="w-3 h-3 mr-1" /> Upload
                     </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.txt,.doc,.docx,.csv,.json"
-                      className="hidden"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        setKnowledgeFiles((prev) => [...prev, ...files]);
-                        e.target.value = "";
-                      }}
-                    />
+                    <input ref={fileInputRef} type="file" multiple accept=".pdf,.txt,.doc,.docx,.csv,.json" className="hidden"
+                      onChange={(e) => { const files = Array.from(e.target.files || []); setKnowledgeFiles(prev => [...prev, ...files]); e.target.value = ""; }} />
                   </div>
                   {knowledgeFiles.length > 0 ? (
                     <div className="space-y-1.5">
@@ -333,7 +530,7 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                             <span className="text-xs text-foreground truncate">{file.name}</span>
                             <span className="text-[10px] text-muted-foreground shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
                           </div>
-                          <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setKnowledgeFiles((prev) => prev.filter((_, idx) => idx !== i))}>
+                          <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setKnowledgeFiles(prev => prev.filter((_, idx) => idx !== i))}>
                             <X className="w-3 h-3" />
                           </Button>
                         </div>
@@ -346,7 +543,6 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                   )}
                 </div>
 
-                {/* FAQ */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <HelpCircle className="w-3.5 h-3.5" /> Perguntas Frequentes (FAQ)
@@ -357,7 +553,7 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                         <div key={i} className="rounded-md border border-border bg-muted/10 p-3 space-y-1 relative group">
                           <p className="text-xs font-medium text-foreground">P: {faq.question}</p>
                           <p className="text-xs text-muted-foreground">R: {faq.answer}</p>
-                          <Button type="button" variant="ghost" size="sm" className="absolute top-1.5 right-1.5 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setFaqItems((prev) => prev.filter((_, idx) => idx !== i))}>
+                          <Button type="button" variant="ghost" size="sm" className="absolute top-1.5 right-1.5 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setFaqItems(prev => prev.filter((_, idx) => idx !== i))}>
                             <X className="w-3 h-3" />
                           </Button>
                         </div>
@@ -367,18 +563,15 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                   <div className="rounded-md border border-border bg-muted/5 p-3 space-y-2">
                     <Input placeholder="Qual é a pergunta?" value={newFaqQuestion} onChange={(e) => setNewFaqQuestion(e.target.value)} className="bg-muted/20 border-border text-xs h-8" />
                     <Textarea placeholder="Qual é a resposta?" value={newFaqAnswer} onChange={(e) => setNewFaqAnswer(e.target.value)} className="bg-muted/20 border-border text-xs min-h-[60px]" />
-                    <Button type="button" variant="outline" size="sm" className="text-xs h-7 w-full" disabled={!newFaqQuestion.trim() || !newFaqAnswer.trim()} onClick={() => {
-                      setFaqItems((prev) => [...prev, { question: newFaqQuestion.trim(), answer: newFaqAnswer.trim() }]);
-                      setNewFaqQuestion("");
-                      setNewFaqAnswer("");
-                    }}>
+                    <Button type="button" variant="outline" size="sm" className="text-xs h-7 w-full" disabled={!newFaqQuestion.trim() || !newFaqAnswer.trim()}
+                      onClick={() => { setFaqItems(prev => [...prev, { question: newFaqQuestion.trim(), answer: newFaqAnswer.trim() }]); setNewFaqQuestion(""); setNewFaqAnswer(""); }}>
                       <Plus className="w-3 h-3 mr-1" /> Adicionar FAQ
                     </Button>
                   </div>
                 </div>
               </TabsContent>
 
-              {/* Tab 3: Automação */}
+              {/* ── ABA: AUTOMAÇÃO ── */}
               <TabsContent value="automation" className="space-y-4 mt-4">
                 <div className="rounded-lg border border-border bg-muted/10 p-4 space-y-3">
                   <div className="flex items-center gap-2">
@@ -386,15 +579,81 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
                     <p className="text-sm font-medium text-foreground">Configuração automática</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Ao criar o cliente, o sistema configurará automaticamente o workflow no n8n e vinculará ao número do WhatsApp.
+                    Ao salvar o cliente, o sistema criará a instância no Evolution API e configurará o webhook no n8n automaticamente.
                   </p>
                 </div>
 
+                {/* QR Code / Status de Conexão */}
+                <div className="rounded-lg border border-border bg-muted/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-primary" /> Conexão WhatsApp
+                    </p>
+                    {qr.connected ? (
+                      <span className="flex items-center gap-1 text-xs text-success font-medium">
+                        <Wifi className="w-3.5 h-3.5" /> Conectado
+                      </span>
+                    ) : qr.polling ? (
+                      <span className="flex items-center gap-1 text-xs text-warning font-medium">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Aguardando scan...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <WifiOff className="w-3.5 h-3.5" /> Desconectado
+                      </span>
+                    )}
+                  </div>
+
+                  {qr.connected ? (
+                    <div className="flex flex-col items-center py-4 gap-2">
+                      <CheckCircle2 className="w-10 h-10 text-success" />
+                      <p className="text-sm text-success font-medium">WhatsApp conectado!</p>
+                      <p className="text-xs text-muted-foreground">A IA já está ativa para este cliente.</p>
+                    </div>
+                  ) : qr.loading ? (
+                    <div className="flex flex-col items-center py-6 gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      <p className="text-xs text-muted-foreground">Carregando QR code...</p>
+                    </div>
+                  ) : qr.base64 ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <img
+                        src={qr.base64.startsWith("data:") ? qr.base64 : `data:image/png;base64,${qr.base64}`}
+                        alt="QR Code WhatsApp"
+                        className="w-48 h-48 rounded-lg border border-border"
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
+                        Abra o WhatsApp → Configurações → Aparelhos conectados → Conectar aparelho
+                      </p>
+                      <Button type="button" variant="outline" size="sm" className="text-xs h-7"
+                        onClick={() => loadQrCode(form.getValues("instanceName"))}>
+                        <RefreshCw className="w-3 h-3 mr-1" /> Atualizar QR
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center py-4 gap-3">
+                      <p className="text-xs text-muted-foreground text-center">
+                        {isEditing && editingProfile?.instance_name
+                          ? "Clique para verificar o status ou gerar um novo QR code."
+                          : "O QR code será gerado automaticamente ao salvar o cliente."}
+                      </p>
+                      {(isEditing && editingProfile?.instance_name) && (
+                        <Button type="button" variant="outline" size="sm" disabled={provisioning}
+                          onClick={() => loadQrCode(editingProfile.instance_name!)}>
+                          {provisioning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+                          Obter QR Code
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Webhook URL manual (opcional) */}
                 <FormField control={form.control} name="webhookUrl" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-muted-foreground text-xs">URL do Webhook (opcional)</FormLabel>
+                    <FormLabel className="text-muted-foreground text-xs">URL do Webhook manual (opcional)</FormLabel>
                     <FormDescription className="text-xs text-muted-foreground/70">
-                      Se já tiver um workflow pronto, cole a URL aqui.
+                      Deixe vazio para usar o n8n configurado automaticamente.
                     </FormDescription>
                     <FormControl>
                       <Input placeholder="https://n8n.seuservidor.com/webhook/..." className="bg-muted/20 border-border font-mono text-xs" {...field} />
@@ -405,23 +664,20 @@ export default function NewClientDialog({ open, onOpenChange, onClientCreated }:
               </TabsContent>
             </Tabs>
 
-            {/* Navigation */}
             <div className="flex justify-between pt-2 border-t border-border">
-              <Button type="button" variant="ghost" size="sm" onClick={goToPrev} disabled={activeTab === "info"}>
-                Anterior
-              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={goToPrev} disabled={activeTab === "info"}>Anterior</Button>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 {activeTab === "automation" ? (
                   <Button type="submit" size="sm" disabled={submitting} className="gradient-primary text-primary-foreground border-0">
-                    {submitting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> Criando...</> : <><Zap className="w-3.5 h-3.5 mr-1" /> Criar Cliente</>}
+                    {submitting
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> {isEditing ? "Salvando..." : "Criando..."}</>
+                      : isEditing
+                        ? <><Pencil className="w-3.5 h-3.5 mr-1" /> Salvar Alterações</>
+                        : <><Zap className="w-3.5 h-3.5 mr-1" /> Criar Cliente</>}
                   </Button>
                 ) : (
-                  <Button type="button" size="sm" onClick={goToNext}>
-                    Próximo
-                  </Button>
+                  <Button type="button" size="sm" onClick={goToNext}>Próximo</Button>
                 )}
               </div>
             </div>

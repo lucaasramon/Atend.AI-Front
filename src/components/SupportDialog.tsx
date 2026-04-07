@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Headphones, Loader2, Send } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,16 +36,10 @@ export default function SupportDialog() {
 
     setSending(true);
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, company, phone")
-        .eq("id", user?.id)
-        .single();
+      const profile = await api.get<any>("/api/profiles/me");
 
-      await supabase.from("admin_notifications").insert({
-        user_id: user!.id,
+      await api.post("/api/notifications/admin", {
         type: "support_ticket",
-        user_email: user?.email,
         user_name: profile?.full_name || "Não informado",
         company: profile?.company || "Não informado",
         phone: profile?.phone || "Não informado",

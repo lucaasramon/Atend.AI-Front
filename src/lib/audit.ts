@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export async function logAudit(
   action: string,
@@ -7,11 +7,7 @@ export async function logAudit(
   details?: Record<string, any>
 ) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await (supabase as any).from("audit_logs").insert({
-      admin_id: user.id,
+    await api.post("/api/audit", {
       action,
       target_type: targetType,
       target_id: targetId || null,

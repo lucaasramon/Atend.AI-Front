@@ -3,11 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Power, PauseCircle, PlayCircle, Bot, Wifi, WifiOff, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 
 type RobotStatus = "online" | "paused" | "offline";
@@ -35,19 +35,18 @@ export default function RobotStatusWidget() {
   const loadData = async () => {
     if (!user) return;
     try {
-      const [profileRes, intRes] = await Promise.all([
-        supabase.from("profiles").select("status").eq("id", user.id).single(),
-        supabase.from("robot_interruptions").select("*").eq("tenant_id", user.id).eq("is_active", true),
+      const [profile, ints] = await Promise.all([
+        api.get<{ status: string }>("/api/profiles/me"),
+        api.get<Interruption[]>("/api/robot/interruptions"),
       ]);
 
-      const pStatus = profileRes.data?.status || "active";
+      const pStatus = profile.status || "active";
       setProfileStatus(pStatus);
-      const activeInts = (intRes.data || []) as Interruption[];
-      setInterruptions(activeInts);
+      setInterruptions(ints || []);
 
       if (pStatus === "blocked" || pStatus === "inactive") {
         setStatus("offline");
-      } else if (activeInts.length > 0) {
+      } else if (ints.length > 0) {
         setStatus("paused");
       } else {
         setStatus("online");
@@ -61,31 +60,17 @@ export default function RobotStatusWidget() {
 
   useEffect(() => {
     loadData();
-
-    if (!user) return;
-    const channel = supabase
-      .channel("robot-status")
-      .on("postgres_changes", { event: "*", schema: "public", table: "robot_interruptions", filter: `tenant_id=eq.${user.id}` }, () => loadData())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` }, () => loadData())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    const interval = setInterval(loadData, 15_000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const handleResumeAll = async () => {
-    if (!user) return;
     setToggling(true);
     try {
-      const { error } = await supabase
-        .from("robot_interruptions")
-        .update({ is_active: false })
-        .eq("tenant_id", user.id)
-        .eq("is_active", true);
-
-      if (error) throw error;
+      await api.patch("/api/robot/interruptions/resume-all", {});
       toast({ title: "Robô retomado! ✅", description: "Todas as pausas foram encerradas." });
       await loadData();
-    } catch (error) {
+    } catch {
       toast({ title: "Erro ao retomar", variant: "destructive" });
     } finally {
       setToggling(false);
@@ -94,15 +79,10 @@ export default function RobotStatusWidget() {
 
   const handleResumeOne = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("robot_interruptions")
-        .update({ is_active: false })
-        .eq("id", id);
-
-      if (error) throw error;
+      await api.patch(`/api/robot/interruptions/${id}`, { is_active: false });
       toast({ title: "Pausa encerrada ✅" });
       await loadData();
-    } catch (error) {
+    } catch {
       toast({ title: "Erro", variant: "destructive" });
     }
   };

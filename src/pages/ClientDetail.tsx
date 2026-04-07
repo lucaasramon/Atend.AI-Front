@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import StatusBadge from "@/components/StatusBadge";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
@@ -36,14 +36,8 @@ export default function ClientDetail() {
 
   const loadProfile = async (profileId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", profileId)
-        .single();
-
-      if (error) throw error;
-      setProfile(data as unknown as Profile);
+      const data = await api.get<Profile>(`/api/profiles/${profileId}`);
+      setProfile(data);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast({ title: "Erro ao carregar cliente", variant: "destructive" });
@@ -56,17 +50,12 @@ export default function ClientDetail() {
     if (!profile) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update(fields as any)
-        .eq("id", profile.id);
-
-      if (error) throw error;
+      await api.patch(`/api/profiles/${profile.id}`, fields);
       setProfile((prev) => prev ? { ...prev, ...fields } : prev);
       toast({ title: "Salvo com sucesso" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving profile:", error);
-      toast({ title: "Erro ao salvar", variant: "destructive" });
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }

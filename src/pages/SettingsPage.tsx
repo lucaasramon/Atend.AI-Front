@@ -3,8 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Save } from "lucide-react";
+import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface Settings {
@@ -34,77 +34,43 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const { data, error } = await (supabase as any)
-        .from("system_settings")
-        .select("key, value");
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const loaded = { ...DEFAULT_SETTINGS };
-        for (const row of data) {
-          if (row.key in loaded) {
-            const val = row.value;
-            if (row.key.startsWith("alert_")) {
-              (loaded as any)[row.key] = val === "true";
-            } else {
-              (loaded as any)[row.key] = val || "";
+    api.get<{ key: string; value: string }[]>("/api/settings")
+      .then((data) => {
+        if (data && data.length > 0) {
+          const loaded = { ...DEFAULT_SETTINGS };
+          for (const row of data) {
+            if (row.key in loaded) {
+              if (row.key.startsWith("alert_")) {
+                (loaded as any)[row.key] = row.value === "true";
+              } else {
+                (loaded as any)[row.key] = row.value || "";
+              }
             }
           }
+          setSettings(loaded);
         }
-        setSettings(loaded);
-      }
-    } catch (error) {
-      console.error("Error loading settings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      })
+      .catch((err) => console.error("Error loading settings:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const saveSettings = async () => {
     setSaving(true);
     try {
-      const entries = Object.entries(settings).map(([key, value]) => ({
-        key,
-        value: String(value),
-        updated_at: new Date().toISOString(),
-      }));
-
-      for (const entry of entries) {
-        const { error } = await (supabase as any)
-          .from("system_settings")
-          .upsert(entry, { onConflict: "key" });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Configurações salvas",
-        description: "Todas as configurações foram atualizadas com sucesso.",
-      });
+      const body = Object.fromEntries(
+        Object.entries(settings).map(([k, v]) => [k, String(v)])
+      );
+      await api.put("/api/settings", body);
+      toast({ title: "Configurações salvas", description: "Todas as configurações foram atualizadas com sucesso." });
     } catch (error: any) {
-      console.error("Error saving settings:", error);
-      toast({
-        title: "Erro ao salvar",
-        description: error.message || "Não foi possível salvar as configurações.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
@@ -118,22 +84,11 @@ export default function SettingsPage() {
         <h3 className="text-sm font-medium text-card-foreground">Integração n8n</h3>
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">URL do n8n</Label>
-          <Input
-            value={settings.n8n_url}
-            onChange={(e) => setSettings(s => ({ ...s, n8n_url: e.target.value }))}
-            placeholder="https://n8n.meuservidor.com"
-            className="bg-muted/50 border-border font-mono text-xs"
-          />
+          <Input value={settings.n8n_url} onChange={(e) => setSettings(s => ({ ...s, n8n_url: e.target.value }))} placeholder="https://n8n.meuservidor.com" className="bg-muted/50 border-border font-mono text-xs" />
         </div>
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">API Key</Label>
-          <Input
-            type="password"
-            value={settings.n8n_api_key}
-            onChange={(e) => setSettings(s => ({ ...s, n8n_api_key: e.target.value }))}
-            placeholder="n8n_api_xxxxx"
-            className="bg-muted/50 border-border font-mono text-xs"
-          />
+          <Input type="password" value={settings.n8n_api_key} onChange={(e) => setSettings(s => ({ ...s, n8n_api_key: e.target.value }))} placeholder="n8n_api_xxxxx" className="bg-muted/50 border-border font-mono text-xs" />
         </div>
       </div>
 
@@ -141,65 +96,33 @@ export default function SettingsPage() {
         <h3 className="text-sm font-medium text-card-foreground">Evolution API (WhatsApp)</h3>
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">URL da API</Label>
-          <Input
-            value={settings.evolution_url}
-            onChange={(e) => setSettings(s => ({ ...s, evolution_url: e.target.value }))}
-            placeholder="https://evolution.meuservidor.com"
-            className="bg-muted/50 border-border font-mono text-xs"
-          />
+          <Input value={settings.evolution_url} onChange={(e) => setSettings(s => ({ ...s, evolution_url: e.target.value }))} placeholder="https://evolution.meuservidor.com" className="bg-muted/50 border-border font-mono text-xs" />
         </div>
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">API Key</Label>
-          <Input
-            type="password"
-            value={settings.evolution_api_key}
-            onChange={(e) => setSettings(s => ({ ...s, evolution_api_key: e.target.value }))}
-            placeholder="evo_xxxxx"
-            className="bg-muted/50 border-border font-mono text-xs"
-          />
+          <Input type="password" value={settings.evolution_api_key} onChange={(e) => setSettings(s => ({ ...s, evolution_api_key: e.target.value }))} placeholder="evo_xxxxx" className="bg-muted/50 border-border font-mono text-xs" />
         </div>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5 shadow-card space-y-4">
         <h3 className="text-sm font-medium text-card-foreground">Notificações</h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-card-foreground">Alertas de Desconexão</p>
-            <p className="text-xs text-muted-foreground">Notificar quando um WhatsApp desconectar</p>
+        {[
+          { key: "alert_disconnect", label: "Alertas de Desconexão", desc: "Notificar quando um WhatsApp desconectar" },
+          { key: "alert_ban_risk", label: "Risco de Banimento Alto", desc: "Notificar quando score ultrapassar 60%" },
+          { key: "alert_subscription_expiry", label: "Vencimento de Assinatura", desc: "Lembrete 3 dias antes do vencimento" },
+        ].map(({ key, label, desc }) => (
+          <div key={key} className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-card-foreground">{label}</p>
+              <p className="text-xs text-muted-foreground">{desc}</p>
+            </div>
+            <Switch checked={(settings as any)[key]} onCheckedChange={(v) => setSettings(s => ({ ...s, [key]: v }))} />
           </div>
-          <Switch
-            checked={settings.alert_disconnect}
-            onCheckedChange={(v) => setSettings(s => ({ ...s, alert_disconnect: v }))}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-card-foreground">Risco de Banimento Alto</p>
-            <p className="text-xs text-muted-foreground">Notificar quando score ultrapassar 60%</p>
-          </div>
-          <Switch
-            checked={settings.alert_ban_risk}
-            onCheckedChange={(v) => setSettings(s => ({ ...s, alert_ban_risk: v }))}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-card-foreground">Vencimento de Assinatura</p>
-            <p className="text-xs text-muted-foreground">Lembrete 3 dias antes do vencimento</p>
-          </div>
-          <Switch
-            checked={settings.alert_subscription_expiry}
-            onCheckedChange={(v) => setSettings(s => ({ ...s, alert_subscription_expiry: v }))}
-          />
-        </div>
+        ))}
       </div>
 
       <Button onClick={saveSettings} disabled={saving} className="gradient-primary text-primary-foreground border-0 shadow-glow">
-        {saving ? (
-          <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</>
-        ) : (
-          <><Save className="w-4 h-4 mr-2" /> Salvar Configurações</>
-        )}
+        {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : <><Save className="w-4 h-4 mr-2" /> Salvar Configurações</>}
       </Button>
     </div>
   );

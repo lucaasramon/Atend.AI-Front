@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import CompanyInfoStep from "@/components/onboarding/CompanyInfoStep";
+import { useSubscription } from "@/hooks/use-subscription";
 import OnboardingChoice from "@/components/onboarding/OnboardingChoice";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 
 export default function ClientOnboarding() {
   const [showChoice, setShowChoice] = useState(true);
@@ -15,125 +15,81 @@ export default function ClientOnboarding() {
   const [saving, setSaving] = useState(false);
   const [requestingSupport, setRequestingSupport] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const { planId } = useSubscription();
 
   useEffect(() => {
-    loadOnboardingData();
-  }, []);
+    if (!user) return;
+    api.get<{ onboarding_data: any; onboarding_completed: boolean }>("/api/profiles/me")
+      .then((data) => {
+        if (data?.onboarding_completed) {
+          navigate("/client/dashboard");
+          return;
+        }
+        if (data?.onboarding_data && typeof data.onboarding_data === "object" && "choice_made" in data.onboarding_data) {
+          setShowChoice(false);
+        }
+        setOnboardingData(data?.onboarding_data || {});
+      })
+      .catch((err) => {
+        console.error("Error loading onboarding data:", err);
+        toast({ title: "Erro ao carregar dados", variant: "destructive" });
+      })
+      .finally(() => setLoading(false));
+  }, [user]);
 
-  const loadOnboardingData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("onboarding_data, onboarding_completed")
-        .eq("id", user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (data?.onboarding_completed) {
-        navigate("/client/dashboard");
-        return;
-      }
-
-      if (data?.onboarding_data && typeof data.onboarding_data === 'object' && 'choice_made' in data.onboarding_data) {
-        setShowChoice(false);
-      }
-
-      setOnboardingData(data?.onboarding_data || {});
-    } catch (error) {
-      console.error("Error loading onboarding data:", error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar o progresso do onboarding.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveAndComplete = async (data: any) => {
+  const handleWizardComplete = async (answers: any, generatedPrompt: string) => {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      // Salva perfil e marca onboarding como completo
+      await api.patch("/api/profiles/me/onboarding", {
+        onboarding_data: {
+          ...onboardingData,
+          choice_made: true,
+          choice: "self",
+          wizard_answers: answers,
+          completed: true,
+        },
+        full_name: answers.full_name || null,
+        company: answers.company || null,
+        phone: answers.phone || null,
+      });
 
-      const profileUpdate: any = {
-        onboarding_data: { ...onboardingData, company_info: { ...data, completed: true } },
-        onboarding_completed: true,
-        full_name: data.full_name || null,
-        company: data.company || null,
-        phone: data.phone || null,
-      };
+      // Salva o prompt gerado pela IA no perfil
+      await api.patch("/api/profiles/me", {
+        system_prompt: generatedPrompt,
+      });
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(profileUpdate)
-        .eq("id", user.id);
-
-      if (error) throw error;
-
-      // Notify admin
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      await supabase.from("admin_notifications").insert({
-        user_id: user.id,
-        type: 'onboarding_complete',
-        user_email: user.email,
-        user_name: profile?.full_name || 'Não informado',
-        company: profile?.company || 'Não informado',
-        phone: profile?.phone || 'Não informado',
-        onboarding_data: profile?.onboarding_data || {},
+      // Notifica o admin
+      await api.post("/api/notifications/admin", {
+        type: "onboarding_complete",
+        user_name: answers.full_name || "Não informado",
+        company: answers.company || "Não informado",
+        phone: answers.phone || "Não informado",
+        onboarding_data: answers,
       });
 
       toast({
         title: "Cadastro concluído! ✅",
-        description: "Bem-vindo ao AtendIA! Nosso suporte entrará em contato para configurar seu robô.",
+        description: "Seu robô foi configurado. Bem-vindo ao AtendIA!",
       });
-
       setTimeout(() => navigate("/client/dashboard"), 2000);
-      return true;
-    } catch (error) {
-      console.error("Error completing onboarding:", error);
-      toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar o progresso.",
-        variant: "destructive",
-      });
-      return false;
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleChoice = async (choice: 'self' | 'support') => {
-    if (choice === 'self') {
+  const handleChoice = async (choice: "self" | "support") => {
+    if (choice === "self") {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const updatedData = { ...onboardingData, choice_made: true, choice: 'self' };
-
-        const { error } = await supabase
-          .from("profiles")
-          .update({ onboarding_data: updatedData })
-          .eq("id", user.id);
-
-        if (!error) {
-          setOnboardingData(updatedData);
-          setShowChoice(false);
-        }
-      } catch (error) {
-        console.error("Error saving choice:", error);
-      }
+        const updatedData = { ...onboardingData, choice_made: true, choice: "self" };
+        await api.patch("/api/profiles/me", { onboarding_data: updatedData });
+        setOnboardingData(updatedData);
+        setShowChoice(false);
+      } catch {}
     } else {
       await requestSupport();
     }
@@ -142,51 +98,33 @@ export default function ClientOnboarding() {
   const requestSupport = async () => {
     setRequestingSupport(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const profile = await api.get<any>("/api/profiles/me");
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      await supabase.from("admin_notifications").insert({
-        user_id: user.id,
-        type: 'support_request',
-        user_email: user.email,
-        user_name: profile?.full_name || 'Não informado',
-        company: profile?.company || 'Não informado',
-        phone: profile?.phone || 'Não informado',
+      await api.post("/api/notifications/admin", {
+        type: "support_request",
+        user_name: profile?.full_name || "Não informado",
+        company: profile?.company || "Não informado",
+        phone: profile?.phone || "Não informado",
         onboarding_data: profile?.onboarding_data || {},
       });
 
       const updatedData = {
         ...onboardingData,
         choice_made: true,
-        choice: 'support',
+        choice: "support",
         support_requested: true,
-        support_requested_at: new Date().toISOString()
+        support_requested_at: new Date().toISOString(),
       };
 
-      await supabase
-        .from("profiles")
-        .update({ onboarding_data: updatedData })
-        .eq("id", user.id);
+      await api.patch("/api/profiles/me", { onboarding_data: updatedData });
 
       toast({
         title: "Solicitação enviada! 🎉",
-        description: "Em breve entraremos em contato para configurar seu robô.",
+        description: "Em breve nossa equipe entrará em contato para configurar seu robô.",
       });
-
       setTimeout(() => navigate("/client/dashboard"), 2000);
-    } catch (error) {
-      console.error("Error requesting support:", error);
-      toast({
-        title: "Erro ao enviar solicitação",
-        description: "Tente novamente ou entre em contato diretamente.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      toast({ title: "Erro ao enviar solicitação", description: error.message, variant: "destructive" });
     } finally {
       setRequestingSupport(false);
     }
@@ -201,7 +139,7 @@ export default function ClientOnboarding() {
   }
 
   if (showChoice) {
-    return <OnboardingChoice onChoose={handleChoice} />;
+    return <OnboardingChoice onChoose={handleChoice} planId={planId} />;
   }
 
   if (requestingSupport) {
@@ -217,27 +155,20 @@ export default function ClientOnboarding() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Complete seu Cadastro</h1>
-          <p className="text-muted-foreground">
-            Preencha os dados da sua empresa para começar
-          </p>
+      <div className="max-w-xl mx-auto">
+        <div className="text-center space-y-1 mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Configure seu Robô</h1>
+          <p className="text-muted-foreground">Responda as perguntas abaixo e a IA cria tudo para você</p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados da Empresa</CardTitle>
-            <CardDescription>Informações básicas do seu negócio</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CompanyInfoStep
-              data={onboardingData.company_info || {}}
-              onSave={saveAndComplete}
-              saving={saving}
-            />
-          </CardContent>
-        </Card>
+        <OnboardingWizard
+          initialData={onboardingData.wizard_answers || {
+            full_name: onboardingData.company_info?.full_name || "",
+            company: onboardingData.company_info?.company || "",
+            phone: onboardingData.company_info?.phone || "",
+          }}
+          onComplete={handleWizardComplete}
+          saving={saving}
+        />
       </div>
     </div>
   );

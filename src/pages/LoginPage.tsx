@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { STRIPE_PLANS, PlanId } from "@/lib/stripe-plans";
 
 export default function LoginPage() {
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const selectedPlan = searchParams.get("plan") as PlanId | null;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setUserFromToken } = useAuth();
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -24,73 +26,42 @@ export default function LoginPage() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupCompany, setSignupCompany] = useState("");
   const [loading, setLoading] = useState(false);
-  const [forgotMode, setForgotMode] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
 
-  const redirectAfterAuth = async () => {
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin");
-
-      if (roles && roles.length > 0) {
-        navigate("/admin");
-        return;
-      }
-    }
-
-    if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
-      navigate(`/client/billing?auto_checkout=${selectedPlan}`);
+  const redirectAfterAuth = (role: string) => {
+    if (role === "admin") {
+      navigate("/admin");
     } else {
-      navigate("/client/billing");
+      if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
+        navigate(`/client/billing?auto_checkout=${selectedPlan}`);
+      } else {
+        navigate("/client/billing");
+      }
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const res = await api.post<{ token: string; user: { id: string; email: string; role: string } }>("/api/auth/login", {
+        email: loginEmail,
+        password: loginPassword,
+      });
+      setUserFromToken(res.token, res.user);
       toast({ title: "Login realizado!", description: "Redirecionando..." });
-      await redirectAfterAuth();
-    }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotEmail) return;
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada para redefinir a senha." });
-      setForgotMode(false);
+      redirectAfterAuth(res.user.role);
+    } catch (error: any) {
+      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedPlan) {
-      toast({ 
-        title: "Selecione um plano", 
-        description: "Por favor, selecione um plano antes de criar sua conta.", 
-        variant: "destructive" 
-      });
+      toast({ title: "Selecione um plano", description: "Por favor, selecione um plano antes de criar sua conta.", variant: "destructive" });
       return;
     }
 
@@ -98,31 +69,23 @@ export default function LoginPage() {
       toast({ title: "Erro", description: "A senha deve ter no mínimo 6 caracteres", variant: "destructive" });
       return;
     }
-    
+
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: signupEmail,
-      password: signupPassword,
-      options: {
-        data: {
-          full_name: signupName,
-          company: signupCompany,
-          plan: selectedPlan,
-        },
-        emailRedirectTo: `${window.location.origin}/email-confirmed`,
-      },
-    });
-    setLoading(false);
-    
-    if (error) {
+    try {
+      const res = await api.post<{ token: string; user: { id: string; email: string; role: string } }>("/api/auth/signup", {
+        email: signupEmail,
+        password: signupPassword,
+        full_name: signupName,
+        company: signupCompany,
+        plan: selectedPlan,
+      });
+      setUserFromToken(res.token, res.user);
+      toast({ title: "Conta criada!", description: "Redirecionando..." });
+      redirectAfterAuth(res.user.role);
+    } catch (error: any) {
       toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
-    } else if (data.user) {
-      if (data.session) {
-        toast({ title: "Conta criada!", description: "Redirecionando..." });
-        await redirectAfterAuth();
-      } else {
-        toast({ title: "Conta criada!", description: "Verifique seu email para confirmar." });
-      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,36 +94,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
             <span className="text-xl font-bold">AtendIA</span>
           </Link>
         </div>
 
         <Card>
-          {forgotMode ? (
-            <>
-              <CardHeader>
-                <h3 className="text-lg font-semibold">Esqueci minha senha</h3>
-                <p className="text-sm text-muted-foreground">Digite seu email para receber o link de recuperação.</p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="forgot-email">Email</Label>
-                    <Input id="forgot-email" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Enviando..." : "Enviar link de recuperação"}
-                  </Button>
-                  <Button type="button" variant="ghost" className="w-full" onClick={() => setForgotMode(false)}>
-                    Voltar para o login
-                  </Button>
-                </form>
-              </CardContent>
-            </>
-          ) : (
           <Tabs defaultValue={defaultTab}>
             <CardHeader className="pb-3">
               <TabsList className="w-full">
@@ -178,11 +117,6 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Senha</Label>
                     <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
-                  </div>
-                  <div className="text-right">
-                    <button type="button" onClick={() => setForgotMode(true)} className="text-sm text-primary hover:underline">
-                      Esqueci minha senha
-                    </button>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Entrando..." : "Entrar"}
@@ -221,13 +155,12 @@ export default function LoginPage() {
                     <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading || !selectedPlan}>
-                    {loading ? "Criando..." : `Criar Conta e Assinar ${selectedPlan ? STRIPE_PLANS[selectedPlan].name : ""}`}
+                    {loading ? "Criando..." : `Criar Conta${selectedPlan ? ` — ${STRIPE_PLANS[selectedPlan].name}` : ""}`}
                   </Button>
                 </form>
               </TabsContent>
             </CardContent>
           </Tabs>
-          )}
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">

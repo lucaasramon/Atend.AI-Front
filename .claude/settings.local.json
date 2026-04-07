@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ':*)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@admin.com\",\"password\":\"admin123\"}')",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"lucasstraike414@gmail.com\",\"password\":\"admin123\"}')",
+      "Bash(ls *.env)",
+      "Bash(ls ../*.env)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/create-client -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NWYyYTA4Mi03NTIwLTQ4MjAtOTAwOC1jNGZlOTNlMDAzNmEiLCJlbWFpbCI6Imx1Y2Fzc3RyYWlrZTQxNEBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzU1MDczNjYsImV4cCI6MTc3NTUxMDk2Nn0.WbuYYCzhX2KwuWBpeBq5UTA6ezspmCGJwIIemPQoiog' -d '{:*)",
+      "Bash(curl -s -X POST http://localhost:3001/api/evolution/provision/57f161fa-ed3d-4c9e-a99c-b4e2232a8aab -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NWYyYTA4Mi03NTIwLTQ4MjAtOTAwOC1jNGZlOTNlMDAzNmEiLCJlbWFpbCI6Imx1Y2Fzc3RyYWlrZTQxNEBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzU1MDczNjYsImV4cCI6MTc3NTUxMDk2Nn0.WbuYYCzhX2KwuWBpeBq5UTA6ezspmCGJwIIemPQoiog' -d '{:*)",
+      "Bash(curl -s -X DELETE https://hostinger-evolution-api.pqtwua.easypanel.host/instance/delete/AtendIA-Teste -H 'apikey: 429683C4C977415CAAFCCE10F7D57E11' -H 'Content-Type: application/json')",
+      "Bash(curl -s https://hostinger-evolution-api.pqtwua.easypanel.host/instance/fetchInstances -H 'apikey: 429683C4C977415CAAFCCE10F7D57E11')",
+      "Bash(curl -s https://hostinger-evolution-api.pqtwua.easypanel.host/instance/Brenna-chat/settings -H 'apikey: 429683C4C977415CAAFCCE10F7D57E11')",
+      "Bash(curl -s https://hostinger-evolution-api.pqtwua.easypanel.host/ -H 'apikey: 429683C4C977415CAAFCCE10F7D57E11')",
+      "Bash(curl -s https://hostinger-evolution-api.pqtwua.easypanel.host/webhook/find/Brenna-chat -H 'apikey: 429683C4C977415CAAFCCE10F7D57E11')"
+    ]
+  }
+}

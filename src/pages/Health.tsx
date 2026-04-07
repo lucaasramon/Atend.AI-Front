@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AlertTriangle, CheckCircle2, XCircle, RefreshCw, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
@@ -31,21 +31,10 @@ export default function Health() {
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
 
-  useEffect(() => {
-    loadInterruptions();
-    loadServices();
-  }, []);
-
   const loadInterruptions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("robot_interruptions")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
+      const data = await api.get<RobotInterruption[]>("/api/robot/interruptions/all");
       setInterruptions(data || []);
     } catch (error) {
       console.error("Error loading interruptions:", error);
@@ -56,38 +45,17 @@ export default function Health() {
 
   const loadServices = async () => {
     try {
-      const { data } = await (supabase as any)
-        .from("system_settings")
-        .select("key, value");
-
+      const data = await api.get<{ key: string; value: string }[]>("/api/settings");
       const settingsMap: Record<string, string> = {};
       if (data) {
         for (const row of data) {
           settingsMap[row.key] = row.value;
         }
       }
-
       setServices([
-        {
-          name: "n8n Server",
-          configured: !!settingsMap.n8n_url,
-          url: settingsMap.n8n_url || "",
-        },
-        {
-          name: "Evolution API",
-          configured: !!settingsMap.evolution_url,
-          url: settingsMap.evolution_url || "",
-        },
-        {
-          name: "Stripe (Pagamentos)",
-          configured: true, // Always configured via edge function
-          url: "Configurado via backend",
-        },
-        {
-          name: "Banco de Dados",
-          configured: true,
-          url: "Operacional",
-        },
+        { name: "n8n Server", configured: !!settingsMap.n8n_url, url: settingsMap.n8n_url || "" },
+        { name: "Evolution API", configured: !!settingsMap.evolution_url, url: settingsMap.evolution_url || "" },
+        { name: "Banco de Dados", configured: true, url: "PostgreSQL — Operacional" },
       ]);
     } catch {
       setServices([]);
@@ -95,6 +63,11 @@ export default function Health() {
       setServicesLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadInterruptions();
+    loadServices();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -109,21 +82,14 @@ export default function Health() {
         </Button>
       </div>
 
-      {/* Services */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {servicesLoading ? (
-          <div className="col-span-4 flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
+          <div className="col-span-3 flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : services.map((svc) => (
           <div key={svc.name} className="rounded-lg border border-border bg-card p-4 shadow-card">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-card-foreground">{svc.name}</span>
-              {svc.configured ? (
-                <CheckCircle2 className="w-4 h-4 text-success" />
-              ) : (
-                <XCircle className="w-4 h-4 text-muted-foreground" />
-              )}
+              {svc.configured ? <CheckCircle2 className="w-4 h-4 text-success" /> : <XCircle className="w-4 h-4 text-muted-foreground" />}
             </div>
             <div className="text-xs text-muted-foreground">
               {svc.configured ? (
@@ -134,14 +100,13 @@ export default function Health() {
                 </Link>
               )}
             </div>
-            {svc.url && svc.configured && svc.url !== "Configurado via backend" && svc.url !== "Operacional" && (
+            {svc.url && svc.configured && (
               <p className="text-[10px] text-muted-foreground font-mono mt-1 truncate">{svc.url}</p>
             )}
           </div>
         ))}
       </div>
 
-      {/* Robot Interruptions Log */}
       <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -151,9 +116,7 @@ export default function Health() {
           <span className="text-xs text-muted-foreground">{interruptions.length} registros</span>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : interruptions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <CheckCircle2 className="w-10 h-10 text-success mb-3" />
@@ -167,25 +130,13 @@ export default function Health() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-primary truncate">{item.remote_jid}</span>
-                    {item.contact_name && (
-                      <>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">{item.contact_name}</span>
-                      </>
-                    )}
+                    {item.contact_name && <><span className="text-xs text-muted-foreground">·</span><span className="text-xs text-muted-foreground">{item.contact_name}</span></>}
                   </div>
-                  <p className="text-sm text-card-foreground truncate">
-                    {item.reason || "Interrupção manual"} · por {item.created_by || "sistema"}
-                  </p>
+                  <p className="text-sm text-card-foreground truncate">{item.reason || "Interrupção manual"} · por {item.created_by || "sistema"}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {format(new Date(item.created_at), "dd/MM HH:mm", { locale: ptBR })}
-                  </p>
-                  <StatusBadge
-                    status={item.is_active ? "warning" : "offline"}
-                    label={item.is_active ? "Ativo" : "Encerrado"}
-                  />
+                  <p className="text-xs text-muted-foreground font-mono">{format(new Date(item.created_at), "dd/MM HH:mm", { locale: ptBR })}</p>
+                  <StatusBadge status={item.is_active ? "warning" : "offline"} label={item.is_active ? "Ativo" : "Encerrado"} />
                 </div>
               </div>
             ))}

@@ -7,7 +7,7 @@ import { Check, Calendar, Sparkles, Zap, Rocket, Loader2, ExternalLink, CreditCa
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
 import { STRIPE_PLANS, PlanId } from "@/lib/stripe-plans";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useSearchParams } from "react-router-dom";
 
 const planIcons: Record<PlanId, typeof Zap> = { starter: Zap, pro: Sparkles, business: Rocket };
@@ -44,10 +44,28 @@ export default function ClientBilling() {
   }, [searchParams]);
 
   useEffect(() => {
-    const autoCheckoutPlan = searchParams.get("auto_checkout") as PlanId | null;
-    if (autoCheckoutPlan && STRIPE_PLANS[autoCheckoutPlan] && !loading && !subscribed) {
-      setSearchParams({});
-      handleCheckout(STRIPE_PLANS[autoCheckoutPlan].price_id);
+    if (loading) return;
+
+    // Tenta sincronizar com Stripe antes de forçar checkout (fallback para webhook perdido)
+    if (!subscribed) {
+      api.post<{ subscribed: boolean }>("/api/billing/sync", {}).then((data) => {
+        if (data?.subscribed) {
+          refresh();
+          return;
+        }
+        // Se ainda não tem assinatura, dispara auto_checkout se veio da landing
+        const autoCheckoutPlan = searchParams.get("auto_checkout") as PlanId | null;
+        if (autoCheckoutPlan && STRIPE_PLANS[autoCheckoutPlan]) {
+          setSearchParams({});
+          handleCheckout(STRIPE_PLANS[autoCheckoutPlan].price_id);
+        }
+      }).catch(() => {
+        const autoCheckoutPlan = searchParams.get("auto_checkout") as PlanId | null;
+        if (autoCheckoutPlan && STRIPE_PLANS[autoCheckoutPlan]) {
+          setSearchParams({});
+          handleCheckout(STRIPE_PLANS[autoCheckoutPlan].price_id);
+        }
+      });
     }
   }, [loading, subscribed]);
 
@@ -57,10 +75,7 @@ export default function ClientBilling() {
   const handleCheckout = async (priceId: string) => {
     setCheckoutLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
-      });
-      if (error) throw error;
+      const data = await api.post<{ url: string }>("/api/billing/create-checkout", { priceId });
       if (data?.url) window.open(data.url, "_blank");
     } catch (err: any) {
       toast({ title: "Erro ao iniciar checkout", description: err.message, variant: "destructive" });
@@ -74,8 +89,7 @@ export default function ClientBilling() {
   const handleManageSubscription = async () => {
     setPortalLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
+      const data = await api.post<{ url: string }>("/api/billing/customer-portal", {});
       if (data?.url) window.open(data.url, "_blank");
     } catch (err: any) {
       toast({ title: "Erro ao abrir portal", description: err.message, variant: "destructive" });
@@ -87,8 +101,7 @@ export default function ClientBilling() {
   const handleUpdateCard = async () => {
     setCardUpdateLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
+      const data = await api.post<{ url: string }>("/api/billing/customer-portal", {});
       if (data?.url) window.open(data.url, "_blank");
     } catch (err: any) {
       toast({ title: "Erro ao abrir portal", description: err.message, variant: "destructive" });

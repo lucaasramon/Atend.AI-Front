@@ -3,7 +3,7 @@ import { Users, Zap, CheckCircle2, Clock, AlertTriangle, Activity } from "lucide
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import MetricCard from "@/components/MetricCard";
 import StatusBadge from "@/components/StatusBadge";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
 interface Profile {
@@ -42,40 +42,22 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    api.get<{ profiles: Profile[]; notifications: AdminNotification[] }>("/api/profiles/dashboard")
+      .then(({ profiles: p, notifications: n }) => {
+        setProfiles(p || []);
+        setNotifications(n || []);
+      })
+      .catch((err) => console.error("Error loading dashboard:", err))
+      .finally(() => setLoading(false));
   }, []);
 
-  const loadData = async () => {
-    try {
-      const [profilesRes, notificationsRes] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, company, plan, whatsapp_number, status, created_at, onboarding_completed")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("admin_notifications")
-          .select("id, type, user_name, company, read, created_at")
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
-
-      if (profilesRes.data) setProfiles(profilesRes.data as Profile[]);
-      if (notificationsRes.data) setNotifications(notificationsRes.data);
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const activeClients = profiles.filter((p) => (p as any).status !== "blocked").length;
+  const activeClients = profiles.filter((p) => p.status !== "blocked").length;
   const completedOnboarding = profiles.filter((p) => p.onboarding_completed).length;
   const pendingOnboarding = profiles.filter((p) => !p.onboarding_completed).length;
   const newLast7 = profiles.filter(
     (p) => new Date(p.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   ).length;
 
-  // Chart: registrations + notifications per day
   const days = getLast7Days();
   const chartData = days.map((day) => ({
     date: day.slice(5).replace("-", "/"),
@@ -103,41 +85,14 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground mt-1">Visão geral da infraestrutura</p>
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total de Clientes"
-          value={profiles.length}
-          subtitle={`${activeClients} ativos`}
-          icon={Users}
-          variant="primary"
-        />
-        <MetricCard
-          title="Onboarding Completo"
-          value={completedOnboarding}
-          subtitle={`${pendingOnboarding} pendentes`}
-          icon={CheckCircle2}
-          variant="success"
-        />
-        <MetricCard
-          title="Novos (7 dias)"
-          value={newLast7}
-          subtitle="registros recentes"
-          icon={Zap}
-          variant="default"
-        />
-        <MetricCard
-          title="Notificações"
-          value={notifications.filter((n) => !n.read).length}
-          subtitle="não lidas"
-          icon={Clock}
-          variant="warning"
-        />
+        <MetricCard title="Total de Clientes" value={profiles.length} subtitle={`${activeClients} ativos`} icon={Users} variant="primary" />
+        <MetricCard title="Onboarding Completo" value={completedOnboarding} subtitle={`${pendingOnboarding} pendentes`} icon={CheckCircle2} variant="success" />
+        <MetricCard title="Novos (7 dias)" value={newLast7} subtitle="registros recentes" icon={Zap} variant="default" />
+        <MetricCard title="Notificações" value={notifications.filter((n) => !n.read).length} subtitle="não lidas" icon={Clock} variant="warning" />
       </div>
 
-      {/* Chart + Notifications */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Chart */}
         <div className="lg:col-span-2 rounded-lg border border-border bg-card p-5 shadow-card">
           <h2 className="text-sm font-medium text-card-foreground mb-4">Cadastros e Notificações (7 dias)</h2>
           <ResponsiveContainer width="100%" height={260}>
@@ -155,22 +110,13 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
               <XAxis dataKey="date" tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  background: "hsl(220, 18%, 10%)",
-                  border: "1px solid hsl(220, 14%, 18%)",
-                  borderRadius: "8px",
-                  color: "hsl(210, 20%, 92%)",
-                  fontSize: 12,
-                }}
-              />
+              <Tooltip contentStyle={{ background: "hsl(220, 18%, 10%)", border: "1px solid hsl(220, 14%, 18%)", borderRadius: "8px", color: "hsl(210, 20%, 92%)", fontSize: 12 }} />
               <Area type="monotone" dataKey="cadastros" stroke="hsl(190, 90%, 50%)" fill="url(#cadastrosGrad)" name="Cadastros" />
               <Area type="monotone" dataKey="notificacoes" stroke="hsl(145, 65%, 42%)" fill="url(#notifGrad)" name="Notificações" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Recent Notifications */}
         <div className="rounded-lg border border-border bg-card p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-4 h-4 text-warning" />
@@ -197,7 +143,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Client Overview Table */}
       <div className="rounded-lg border border-border bg-card p-5 shadow-card">
         <div className="flex items-center gap-2 mb-4">
           <Activity className="w-4 h-4 text-primary" />
@@ -226,33 +171,20 @@ export default function Dashboard() {
                         <p className="text-xs text-muted-foreground">{profile.full_name || "—"}</p>
                       </div>
                     </td>
+                    <td className="py-3"><span className="text-xs font-mono text-primary capitalize">{profile.plan}</span></td>
                     <td className="py-3">
-                      <span className="text-xs font-mono text-primary capitalize">{profile.plan}</span>
+                      <StatusBadge status={profile.status === "blocked" ? "blocked" : "active"} label={profile.status === "blocked" ? "Bloqueado" : "Ativo"} />
                     </td>
                     <td className="py-3">
-                      <StatusBadge
-                        status={(profile as any).status === "blocked" ? "blocked" : "active"}
-                        label={(profile as any).status === "blocked" ? "Bloqueado" : "Ativo"}
-                      />
+                      <StatusBadge status={profile.onboarding_completed ? "online" : "warning"} label={profile.onboarding_completed ? "Completo" : "Pendente"} />
                     </td>
-                    <td className="py-3">
-                      <StatusBadge
-                        status={profile.onboarding_completed ? "online" : "warning"}
-                        label={profile.onboarding_completed ? "Completo" : "Pendente"}
-                      />
-                    </td>
-                    <td className="py-3">
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {profile.whatsapp_number || "—"}
-                      </span>
-                    </td>
+                    <td className="py-3"><span className="text-xs text-muted-foreground font-mono">{profile.whatsapp_number || "—"}</span></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-        {/* Plan distribution */}
         {Object.keys(planCounts).length > 0 && (
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border">
             {Object.entries(planCounts).map(([plan, count]) => (

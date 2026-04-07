@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, UserPlus, MessageSquare, PauseCircle, PlayCircle, Settings, Clock, ChevronDown } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ActivityEvent {
@@ -32,20 +32,19 @@ export default function ActivityTimeline() {
     if (!user) return;
     const load = async () => {
       try {
-        const now = new Date();
-        const since = new Date(now);
+        const since = new Date();
         since.setDate(since.getDate() - 30);
         const sinceStr = since.toISOString();
 
-        const [leadsRes, msgsRes, intRes] = await Promise.all([
-          supabase.from("leads").select("id, name, created_at").eq("tenant_id", user.id).gte("created_at", sinceStr).order("created_at", { ascending: false }).limit(50),
-          supabase.from("messages").select("id, from_me, remote_jid, created_at").eq("tenant_id", user.id).gte("created_at", sinceStr).order("created_at", { ascending: false }).limit(100),
-          supabase.from("robot_interruptions").select("id, contact_name, remote_jid, is_active, paused_at, created_at").eq("tenant_id", user.id).gte("created_at", sinceStr).order("created_at", { ascending: false }).limit(50),
+        const [leads, msgs, ints] = await Promise.all([
+          api.get<any[]>(`/api/leads/all?since=${sinceStr}&limit=50`),
+          api.get<any[]>(`/api/messages?since=${sinceStr}&limit=100`),
+          api.get<any[]>(`/api/robot/interruptions?since=${sinceStr}&limit=50`),
         ]);
 
         const allEvents: ActivityEvent[] = [];
 
-        (leadsRes.data || []).forEach(l => {
+        (leads || []).forEach((l: any) => {
           allEvents.push({
             id: `lead-${l.id}`,
             type: "lead_created",
@@ -54,7 +53,7 @@ export default function ActivityTimeline() {
           });
         });
 
-        (msgsRes.data || []).forEach(m => {
+        (msgs || []).forEach((m: any) => {
           allEvents.push({
             id: `msg-${m.id}`,
             type: m.from_me ? "message_sent" : "message_received",
@@ -63,7 +62,7 @@ export default function ActivityTimeline() {
           });
         });
 
-        (intRes.data || []).forEach(i => {
+        (ints || []).forEach((i: any) => {
           allEvents.push({
             id: `int-${i.id}`,
             type: i.is_active ? "interruption_started" : "interruption_ended",

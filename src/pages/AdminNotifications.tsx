@@ -1,235 +1,104 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Bell, Check, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Loader2, Mail, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import Pagination from "@/components/Pagination";
+import { api } from "@/lib/api";
 
-interface Notification {
+interface AdminNotification {
   id: string;
-  user_id: string;
   type: string;
   user_name: string | null;
   user_email: string | null;
   company: string | null;
   phone: string | null;
-  whatsapp_number: string | null;
-  system_prompt: string | null;
-  onboarding_data: any;
   read: boolean;
   created_at: string;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 20;
 
 export default function AdminNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadNotifications();
-  }, [page]);
 
   const loadNotifications = async () => {
     setLoading(true);
     try {
-      const { count } = await supabase
-        .from("admin_notifications")
-        .select("*", { count: "exact", head: true });
-      setTotal(count || 0);
-
-      const { data, error } = await supabase
-        .from("admin_notifications")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-      toast({ title: "Erro ao carregar notificações", variant: "destructive" });
+      const res = await api.get<{ data: AdminNotification[]; total: number }>(
+        `/api/notifications/admin?page=${page}&limit=${PAGE_SIZE}`
+      );
+      setNotifications(res.data || []);
+      setTotal(res.total || 0);
+    } catch (err) {
+      console.error("Error loading notifications:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const markAsRead = async (id: string) => {
+  useEffect(() => { loadNotifications(); }, [page]);
+
+  const markRead = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("admin_notifications")
-        .update({ read: true })
-        .eq("id", id);
-
-      if (error) throw error;
-      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
-      toast({ title: "Marcada como lida" });
-    } catch (error) {
-      console.error("Error marking as read:", error);
-      toast({ title: "Erro", variant: "destructive" });
-    }
+      await api.patch(`/api/notifications/admin/${id}/read`, {});
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch {}
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "onboarding_complete": return "Onboarding Completo";
-      case "support_request": return "Solicitação de Suporte";
-      default: return type;
-    }
-  };
-
-  const filtered = notifications.filter(
-    (n) =>
-      (n.user_name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (n.user_email || "").toLowerCase().includes(search.toLowerCase()) ||
-      (n.company || "").toLowerCase().includes(search.toLowerCase()) ||
-      getTypeLabel(n.type).toLowerCase().includes(search.toLowerCase())
-  );
-
-  const unreadCount = notifications.filter(n => !n.read).length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Notificações</h1>
-          <p className="text-muted-foreground mt-1">
-            Acompanhe as solicitações e onboardings dos clientes
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <Badge variant="destructive" className="text-lg px-4 py-2">
-            {unreadCount} não lida{unreadCount !== 1 ? "s" : ""}
-          </Badge>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Notificações</h1>
+        <p className="text-sm text-muted-foreground mt-1">{notifications.filter(n => !n.read).length} não lidas</p>
+      </div>
+
+      <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Bell className="w-10 h-10 mb-3 opacity-30" />
+            <p className="text-sm">Nenhuma notificação ainda</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {notifications.map((n) => (
+              <div key={n.id} className={`flex items-start justify-between px-5 py-4 hover:bg-muted/20 transition-colors ${!n.read ? "bg-primary/5" : ""}`}>
+                <div className="flex items-start gap-3">
+                  {!n.read && <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />}
+                  <div>
+                    <p className="text-sm font-medium text-card-foreground">{n.user_name || "Sem nome"}</p>
+                    <p className="text-xs text-muted-foreground">{n.company || "—"} · {n.user_email || "—"}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {n.type === "onboarding_complete" ? "Onboarding concluído" : "Suporte"}
+                      {" · "}{new Date(n.created_at).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+                {!n.read && (
+                  <Button variant="ghost" size="sm" onClick={() => markRead(n.id)} className="text-xs shrink-0">
+                    <Check className="w-3 h-3 mr-1" /> Lida
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome, email ou empresa..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-card border-border"
-        />
-      </div>
-
-      {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Mail className="w-16 h-16 text-muted-foreground mb-4" />
-            <p className="text-lg text-muted-foreground">
-              {search ? "Nenhuma notificação encontrada" : "Nenhuma notificação ainda"}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map((notification) => (
-            <Card
-              key={notification.id}
-              className={`transition-colors ${!notification.read ? "border-primary bg-primary/5" : ""}`}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant={notification.read ? "secondary" : "default"}>
-                        {getTypeLabel(notification.type)}
-                      </Badge>
-                      {!notification.read && <Badge variant="destructive">Novo</Badge>}
-                    </div>
-                    <CardTitle className="text-xl">{notification.user_name || "Sem nome"}</CardTitle>
-                    <CardDescription>
-                      {notification.company || "Empresa não informada"} •{" "}
-                      {format(new Date(notification.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!notification.read && (
-                      <Button variant="outline" size="sm" onClick={() => markAsRead(notification.id)}>
-                        <Check className="w-4 h-4 mr-2" /> Marcar como lida
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={() => toggleExpand(notification.id)}>
-                      {expandedId === notification.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-
-              {expandedId === notification.id && (
-                <CardContent className="space-y-4 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p className="text-sm">{notification.user_email || "Não informado"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Telefone</p>
-                      <p className="text-sm">{notification.phone || "Não informado"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">WhatsApp</p>
-                      <p className="text-sm">{notification.whatsapp_number || "Não informado"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Empresa</p>
-                      <p className="text-sm">{notification.company || "Não informado"}</p>
-                    </div>
-                  </div>
-
-                  {notification.system_prompt && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">System Prompt</p>
-                      <div className="bg-muted p-3 rounded-md">
-                        <p className="text-sm whitespace-pre-wrap">{notification.system_prompt}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {notification.onboarding_data && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Dados do Onboarding</p>
-                      <div className="bg-muted p-3 rounded-md">
-                        <pre className="text-xs overflow-auto">
-                          {JSON.stringify(notification.onboarding_data, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              )}
-            </Card>
-          ))}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">{total} notificações</p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+            <span className="text-xs text-muted-foreground">{page + 1} / {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}><ChevronRight className="w-4 h-4" /></Button>
+          </div>
         </div>
       )}
-
-      <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
     </div>
   );
 }

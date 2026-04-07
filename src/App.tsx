@@ -29,6 +29,7 @@ import ClientProfile from "@/pages/client/ClientProfile";
 import ClientKnowledgeBase from "@/pages/client/ClientKnowledgeBase";
 import ClientHelp from "@/pages/client/ClientHelp";
 import AdminNotifications from "@/pages/AdminNotifications";
+import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmed" element={<EmailConfirmed />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
 
               {/* Client Area - Protected */}
               <Route path="/client/onboarding" element={<ProtectedRoute><ClientOnboarding /></ProtectedRoute>} />

@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 interface LeadRow {
   id: string;
@@ -86,15 +86,13 @@ export default function ClientLeads() {
   const loadData = async () => {
     if (!user) return;
     try {
-      const { count } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("tenant_id", user.id);
-      setTotal(count || 0);
-
       const [leadsRes, intRes] = await Promise.all([
-        supabase.from("leads").select("*").eq("tenant_id", user.id).order("created_at", { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
-        supabase.from("robot_interruptions").select("id, remote_jid, is_active, expires_at, reason").eq("tenant_id", user.id).eq("is_active", true),
+        api.get<{ data: LeadRow[]; total: number }>(`/api/leads?page=${page}&limit=${PAGE_SIZE}`),
+        api.get<Interruption[]>("/api/robot/interruptions"),
       ]);
-      setLeads((leadsRes.data as any[] || []).map(l => ({ ...l, saved: l.saved ?? false })));
-      setInterruptions(intRes.data || []);
+      setTotal(leadsRes.total || 0);
+      setLeads((leadsRes.data || []).map((l: any) => ({ ...l, saved: l.saved ?? false })));
+      setInterruptions(intRes || []);
     } catch (error) {
       console.error("Error loading leads:", error);
     } finally {
@@ -105,11 +103,7 @@ export default function ClientLeads() {
   const loadMessages = async (lead: LeadRow) => {
     setMessagesLoading(true);
     try {
-      const { data } = await (supabase as any).from("messages").select("id, from_me, content, created_at")
-        .eq("tenant_id", user!.id)
-        .eq("lead_id", lead.id)
-        .order("created_at", { ascending: true })
-        .limit(100);
+      const data = await api.get<Message[]>(`/api/messages/lead/${lead.id}`);
       setMessages(data || []);
     } catch {
       setMessages([]);
@@ -154,7 +148,7 @@ export default function ClientLeads() {
   const toggleSaved = async (lead: LeadRow) => {
     const newSaved = !lead.saved;
     setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, saved: newSaved } : l));
-    await supabase.from("leads").update({ saved: newSaved } as any).eq("id", lead.id);
+    await api.patch(`/api/leads/${lead.id}`, { saved: newSaved });
   };
 
   const handlePause = (lead: LeadRow) => {
@@ -168,11 +162,7 @@ export default function ClientLeads() {
 
   const resumeLead = async (lead: LeadRow) => {
     try {
-      await supabase
-        .from("robot_interruptions")
-        .update({ is_active: false })
-        .eq("tenant_id", user!.id)
-        .eq("remote_jid", lead.phone || "");
+      await api.patch("/api/robot/interruptions/resume-by-jid", { remote_jid: lead.phone || "" });
       setInterruptions(prev => prev.filter(i => i.remote_jid !== lead.phone));
       toast({ title: "Robô retomado", description: `IA reativada para ${lead.name}` });
     } catch {
@@ -187,17 +177,13 @@ export default function ClientLeads() {
       : new Date(Date.now() + parseInt(pauseDuration) * 60 * 1000).toISOString();
 
     try {
-      const { data, error } = await supabase.from("robot_interruptions").insert({
-        tenant_id: user.id,
+      const data = await api.post<Interruption>("/api/robot/interruptions", {
         remote_jid: pauseDialogLead.phone || "",
         contact_name: pauseDialogLead.name,
         reason: "Pausa manual pelo painel",
         expires_at: expiresAt,
-        created_by: user.id,
-      }).select().single();
-
-      if (error) throw error;
-      setInterruptions(prev => [...prev, data as any]);
+      });
+      setInterruptions(prev => [...prev, data]);
       toast({
         title: "Robô pausado",
         description: `IA pausada para ${pauseDialogLead.name} — ${pauseDurations.find(d => d.value === pauseDuration)?.label}`,

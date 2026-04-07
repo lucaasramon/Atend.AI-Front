@@ -10,7 +10,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell, Legend
 } from "recharts";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import RobotStatusWidget from "@/components/RobotStatusWidget";
 import ExportReports from "@/components/ExportReports";
@@ -135,27 +135,24 @@ export default function ClientDashboard() {
 
     const load = async () => {
       try {
-        const [leadsRes, interruptionsRes, templatesRes, messagesRes] = await Promise.all([
-          supabase.from("leads").select("id, status, sentiment, source, created_at").eq("tenant_id", user.id),
-          supabase.from("robot_interruptions").select("*", { count: "exact", head: true }).eq("tenant_id", user.id).eq("is_active", true),
-          supabase.from("response_templates").select("*", { count: "exact", head: true }).eq("tenant_id", user.id),
-          supabase.from("messages").select("id, from_me, created_at").eq("tenant_id", user.id),
+        const [allLeads, interruptionsCount, templatesCount, allMessages] = await Promise.all([
+          api.get<Lead[]>("/api/leads/all"),
+          api.get<{ count: number }>("/api/robot/interruptions/count"),
+          api.get<{ count: number }>("/api/templates/count"),
+          api.get<Message[]>("/api/messages"),
         ]);
-
-        const allLeads = (leadsRes.data || []) as Lead[];
-        const allMessages = (messagesRes.data || []) as Message[];
         const sent = allMessages.filter(m => m.from_me).length;
         const received = allMessages.filter(m => !m.from_me).length;
 
         const today = new Date().toISOString().slice(0, 10);
-        const newToday = allLeads.filter(l => l.created_at?.slice(0, 10) === today).length;
+        const newToday = allLeads.filter((l: Lead) => l.created_at?.slice(0, 10) === today).length;
 
         setLeads(allLeads);
         setMessages(allMessages);
         setStats({
           totalLeads: allLeads.length,
-          activeInterruptions: interruptionsRes.count || 0,
-          templatesCount: templatesRes.count || 0,
+          activeInterruptions: interruptionsCount?.count || 0,
+          templatesCount: templatesCount?.count || 0,
           sentMessages: sent,
           receivedMessages: received,
           newLeadsToday: newToday,

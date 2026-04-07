@@ -1,51 +1,60 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { api } from "@/lib/api";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: string;
+}
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signOut: () => void;
+  setUserFromToken: (token: string, user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  session: null,
   loading: true,
-  signOut: async () => {},
+  signOut: () => {},
+  setUserFromToken: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
       setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+      return;
+    }
+    api.get<AuthUser>("/api/auth/me")
+      .then((u) => setUser(u))
+      .catch(() => {
+        localStorage.removeItem("auth_token");
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
+    localStorage.removeItem("auth_token");
+    setUser(null);
+    window.location.href = "/login";
+  };
+
+  const setUserFromToken = (token: string, u: AuthUser) => {
+    localStorage.setItem("auth_token", token);
+    setUser(u);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, setUserFromToken }}>
       {children}
     </AuthContext.Provider>
   );

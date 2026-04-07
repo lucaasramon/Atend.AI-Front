@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, Plus, Pencil, Trash2, BookOpen, Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,14 +42,8 @@ export default function ClientKnowledgeBase() {
   const loadItems = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from("knowledge_base")
-        .select("*")
-        .eq("tenant_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setItems((data || []) as KBItem[]);
+      const data = await api.get<KBItem[]>("/api/knowledge");
+      setItems(data || []);
     } catch (error) {
       console.error("Error loading knowledge base:", error);
     } finally {
@@ -83,17 +77,10 @@ export default function ClientKnowledgeBase() {
     setSaving(true);
     try {
       if (editing) {
-        const { error } = await supabase
-          .from("knowledge_base")
-          .update({ question: question.trim(), answer: answer.trim(), category, updated_at: new Date().toISOString() })
-          .eq("id", editing.id);
-        if (error) throw error;
+        await api.patch(`/api/knowledge/${editing.id}`, { question: question.trim(), answer: answer.trim(), category });
         toast({ title: "FAQ atualizado! ✅" });
       } else {
-        const { error } = await supabase
-          .from("knowledge_base")
-          .insert({ tenant_id: user.id, question: question.trim(), answer: answer.trim(), category });
-        if (error) throw error;
+        await api.post("/api/knowledge", { question: question.trim(), answer: answer.trim(), category });
         toast({ title: "FAQ adicionado! ✅" });
       }
       setDialogOpen(false);
@@ -107,13 +94,9 @@ export default function ClientKnowledgeBase() {
 
   const handleToggle = async (item: KBItem) => {
     try {
-      const { error } = await supabase
-        .from("knowledge_base")
-        .update({ is_active: !item.is_active })
-        .eq("id", item.id);
-      if (error) throw error;
+      await api.patch(`/api/knowledge/${item.id}`, { is_active: !item.is_active });
       await loadItems();
-    } catch (error) {
+    } catch {
       toast({ title: "Erro ao atualizar", variant: "destructive" });
     }
   };
@@ -121,11 +104,10 @@ export default function ClientKnowledgeBase() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja excluir este FAQ?")) return;
     try {
-      const { error } = await supabase.from("knowledge_base").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/api/knowledge/${id}`);
       toast({ title: "FAQ excluído ✅" });
       await loadItems();
-    } catch (error) {
+    } catch {
       toast({ title: "Erro ao excluir", variant: "destructive" });
     }
   };
