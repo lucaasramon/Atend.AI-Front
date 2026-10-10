@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ export default function LoginPage() {
   const selectedPlan = searchParams.get("plan") as PlanId | null;
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setUserFromToken } = useAuth();
+  const { user, loading: authLoading, setUserFromToken } = useAuth();
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -38,6 +38,11 @@ export default function LoginPage() {
       }
     }
   };
+
+  // Já logado ao abrir a página: pula a tela de login
+  useEffect(() => {
+    if (!authLoading && user) navigate(user.role === "admin" ? "/admin" : "/client/dashboard", { replace: true });
+  }, [authLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

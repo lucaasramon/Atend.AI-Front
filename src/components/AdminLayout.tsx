@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -15,15 +15,18 @@ import {
   Sun,
   Moon,
   LogOut,
+  CalendarDays,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/clients", label: "Clientes", icon: Users },
+  { path: "/admin/agenda", label: "Agenda", icon: CalendarDays },
   { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: true },
   { path: "/admin/audit", label: "Auditoria", icon: ScrollText },
   { path: "/admin/automations", label: "Automações", icon: Bot },
@@ -35,13 +38,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
-  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  const handleLogout = () => signOut();
 
   useEffect(() => {
     loadUnreadCount();
