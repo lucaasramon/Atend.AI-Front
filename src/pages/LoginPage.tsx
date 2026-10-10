@@ -30,6 +30,8 @@ export default function LoginPage() {
   const redirectAfterAuth = (role: string) => {
     if (role === "admin") {
       navigate("/admin");
+    } else if (role === "agenda") {
+      navigate("/admin/agenda");
     } else {
       if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
         navigate(`/client/billing?auto_checkout=${selectedPlan}`);
@@ -41,7 +43,10 @@ export default function LoginPage() {
 
   // Já logado ao abrir a página: pula a tela de login
   useEffect(() => {
-    if (!authLoading && user) navigate(user.role === "admin" ? "/admin" : "/client/dashboard", { replace: true });
+    if (!authLoading && user) {
+      const home = user.role === "admin" ? "/admin" : user.role === "agenda" ? "/admin/agenda" : "/client/dashboard";
+      navigate(home, { replace: true });
+    }
   }, [authLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {

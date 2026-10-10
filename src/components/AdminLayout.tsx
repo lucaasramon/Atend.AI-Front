@@ -39,15 +39,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const isAdmin = user?.role === "admin";
+  // Usuário "agenda" só vê a agenda
+  const visibleItems = isAdmin ? navItems : navItems.filter((item) => item.path === "/admin/agenda");
 
   const handleLogout = () => signOut();
 
   useEffect(() => {
+    if (!isAdmin) return;
     loadUnreadCount();
     const interval = setInterval(loadUnreadCount, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAdmin]);
 
   const loadUnreadCount = async () => {
     try {
@@ -75,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 py-4 px-2 space-y-1">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const active = location.pathname === item.path ||
               (item.path !== "/admin" && location.pathname.startsWith(item.path));
             return (
@@ -136,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span className="text-xs text-muted-foreground">Admin</span>
+            <span className="text-xs text-muted-foreground">{isAdmin ? "Admin" : user?.email}</span>
           </div>
         </header>
         <div className="p-6">{children}</div>

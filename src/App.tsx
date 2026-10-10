@@ -67,7 +67,7 @@ const App = () => (
               <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/agenda" element={<AdminProtectedRoute><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/agenda" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminLayout><AdminNotifications /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/audit" element={<AdminProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/automations" element={<AdminProtectedRoute><AdminLayout><Automations /></AdminLayout></AdminProtectedRoute>} />

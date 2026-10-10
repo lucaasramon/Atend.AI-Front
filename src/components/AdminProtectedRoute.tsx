@@ -1,7 +1,13 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
+export default function AdminProtectedRoute({
+  children,
+  roles = ["admin"],
+}: {
+  children: React.ReactNode;
+  roles?: string[];
+}) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -13,7 +19,9 @@ export default function AdminProtectedRoute({ children }: { children: React.Reac
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "admin") return <Navigate to="/" replace />;
+  if (!roles.includes(user.role)) {
+    return <Navigate to={user.role === "agenda" ? "/admin/agenda" : "/"} replace />;
+  }
 
   return <>{children}</>;
 }

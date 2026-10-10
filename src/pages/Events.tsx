@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,13 @@ interface Group {
 
 type Settings = Record<string, string>;
 
+interface ReminderConfig {
+  enabled: boolean;
+  offsets: number[];
+  group_jid: string;
+  groups: Group[];
+}
+
 const emptyForm = { title: "", description: "", location: "", starts_at: "", is_public: true, group_jid: "" };
 
 const parseOffsets = (v?: string) =>
@@ -92,9 +100,11 @@ const whenLabel = (days: number) => (days === 0 ? "No dia" : `${days} dia${days 
 
 export default function Events() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [config, setConfig] = useState<ReminderConfig>({ enabled: false, offsets: [], group_jid: "", groups: [] });
   const [settings, setSettings] = useState<Settings>({});
-  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -109,27 +119,22 @@ export default function Events() {
   const [settingsForm, setSettingsForm] = useState<Settings>({});
   const [running, setRunning] = useState(false);
 
-  const offsets = useMemo(() => parseOffsets(settings.reminders_offsets), [settings]);
-  const allowedGroups = useMemo(
-    () => (settings.allowed_groups || "").split(",").map((g) => g.trim()).filter(Boolean),
-    [settings]
-  );
+  const offsets = config.offsets;
   const groupName = (jid?: string | null) =>
-    (jid && groups.find((g) => g.id === jid)?.subject) || jid || "—";
+    (jid && config.groups.find((g) => g.id === jid)?.subject) || jid || "—";
 
   const load = async () => {
     try {
-      const [ev, st] = await Promise.all([
+      const [ev, cfg] = await Promise.all([
         api.get<EventItem[]>("/api/events"),
-        api.get<{ key: string; value: string }[]>("/api/settings"),
+        api.get<ReminderConfig>("/api/events/config"),
       ]);
       setEvents(ev || []);
-      const s = Object.fromEntries((st || []).map((r) => [r.key, r.value ?? ""]));
-      setSettings(s);
-      if (s.reminders_instance) {
-        api.get<Group[]>(`/api/evolution/groups/${s.reminders_instance}`)
-          .then((g) => setGroups(g || []))
-          .catch(() => setGroups([]));
+      setConfig(cfg);
+      // Configurações completas (texto da mensagem etc.) só para admin
+      if (isAdmin) {
+        const st = await api.get<{ key: string; value: string }[]>("/api/settings");
+        setSettings(Object.fromEntries((st || []).map((r) => [r.key, r.value ?? ""])));
       }
     } catch (error: any) {
       toast({ title: "Erro ao carregar agenda", description: error.message, variant: "destructive" });
@@ -300,9 +305,8 @@ export default function Events() {
     );
   }
 
-  const enabled = settings.reminders_enabled === "true";
-  const groupOptions = groups.filter((g) => allowedGroups.includes(g.id));
-  const groupChoices = groupOptions.length ? groupOptions : allowedGroups.map((id) => ({ id, subject: id }));
+  const enabled = config.enabled;
+  const groupChoices = config.groups;
 
   const renderEvent = (ev: EventItem) => (
     <div key={ev.id} className="rounded-lg border border-border bg-card p-4 shadow-card space-y-3 hover:border-primary/30 transition-colors">
@@ -320,7 +324,7 @@ export default function Events() {
               {format(new Date(ev.starts_at), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             </span>
             {ev.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{ev.location}</span>}
-            <span>Grupo: {groupName(ev.group_jid || settings.reminders_group_jid)}</span>
+            <span>Grupo: {groupName(ev.group_jid || config.group_jid)}</span>
           </div>
           {ev.description && <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{ev.description}</p>}
         </div>
@@ -344,11 +348,15 @@ export default function Events() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={openSettings}><Settings2 className="w-4 h-4 mr-2" />Configurar</Button>
-          <Button variant="outline" onClick={runNow} disabled={running}>
-            {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-            Rodar agora
-          </Button>
+          {isAdmin && (
+            <>
+              <Button variant="outline" onClick={openSettings}><Settings2 className="w-4 h-4 mr-2" />Configurar</Button>
+              <Button variant="outline" onClick={runNow} disabled={running}>
+                {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Rodar agora
+              </Button>
+            </>
+          )}
           <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Novo evento</Button>
         </div>
       </div>
@@ -359,7 +367,7 @@ export default function Events() {
           <span className={`w-2 h-2 rounded-full ${enabled ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
           Lembretes {enabled ? "ligados" : "desligados"}
         </span>
-        <span className="text-muted-foreground">Grupo: <span className="text-foreground">{groupName(settings.reminders_group_jid)}</span></span>
+        <span className="text-muted-foreground">Grupo: <span className="text-foreground">{groupName(config.group_jid)}</span></span>
         <span className="text-muted-foreground">Antecedências: <span className="text-foreground">{offsets.map(whenLabel).join(", ") || "—"}</span></span>
         <span className="text-muted-foreground">Envio diário às 08:00</span>
       </div>
@@ -435,7 +443,7 @@ export default function Events() {
               <Select value={form.group_jid || "default"} onValueChange={(v) => setForm({ ...form, group_jid: v === "default" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Grupo padrão ({groupName(settings.reminders_group_jid)})</SelectItem>
+                  <SelectItem value="default">Grupo padrão ({groupName(config.group_jid)})</SelectItem>
                   {groupChoices.map((g) => (
                     <SelectItem key={g.id} value={g.id}>{g.subject}</SelectItem>
                   ))}
