@@ -1,0 +1,127 @@
+// Explicação de cada tela do painel: para que serve, quem acessa e o que dá para fazer
+
+export interface PageHelp {
+  purpose: string;
+  who: string;
+  actions?: string[];
+}
+
+const ALL = "Administrador, Agenda e Visualizador (o Visualizador só consulta).";
+const ADMIN = "Somente Administrador.";
+
+const HELP: Record<string, PageHelp> = {
+  "/admin": {
+    purpose: "Visão geral do sistema de atendimento por IA: clientes cadastrados, situação dos robôs e avisos recentes.",
+    who: ADMIN,
+  },
+  "/admin/clients": {
+    purpose: "Lista dos clientes do atendimento por IA no WhatsApp (empresas que usam o robô de atendimento).",
+    who: ADMIN,
+    actions: ["Cadastrar cliente", "Conectar o WhatsApp do cliente pelo QR code", "Ver o status da conexão"],
+  },
+  "/admin/clients/": {
+    purpose: "Detalhes de um cliente do atendimento por IA: dados, plano, instância do WhatsApp e configurações do robô.",
+    who: ADMIN,
+  },
+  "/admin/agenda": {
+    purpose:
+      "Central dos eventos da igreja. Tudo o que é cadastrado aqui entra no calendário e o robô D.Sync avisa nos grupos do WhatsApp antes de cada evento.",
+    who: ALL,
+    actions: [
+      "Criar, editar e excluir eventos (inclusive eventos que se repetem)",
+      "Montar o checklist de cada evento (buffet, som, decoração...) com responsáveis e prazos",
+      "Importar o calendário do ano por planilha",
+      "Ver a prévia das mensagens e os próximos lembretes",
+      "Admin: configurar lembretes e resumos, liberar grupos e editar modelos de checklist",
+    ],
+  },
+  "/admin/calendario": {
+    purpose: "Calendário com todos os eventos, por mês ou pelo ano inteiro. As cores indicam o tipo de evento.",
+    who: ALL,
+    actions: ["Alternar entre Mês e Ano", "Clicar em um evento para ver os detalhes", "Filtrar por categoria clicando na legenda"],
+  },
+  "/admin/locais": {
+    purpose: "Mostra se cada espaço da igreja (Templo, sala das crianças...) está livre ou ocupado em cada dia da semana.",
+    who: ALL,
+    actions: ["Navegar entre as semanas", "Admin: cadastrar, renomear e desativar locais"],
+  },
+  "/admin/pops": {
+    purpose:
+      "Procedimentos padrão (POPs) dos ministérios, como a rotina da mídia. Os POPs com repetição são enviados no grupo do ministério no dia programado.",
+    who: ALL,
+    actions: ["Marcar os passos feitos hoje", "Ver o histórico de execuções", "Admin: cadastrar POPs e enviar no grupo na hora"],
+  },
+  "/admin/escalas": {
+    purpose:
+      "Quem serve em cada culto e em qual área. Na véspera, cada escalado recebe no WhatsApp o checklist da sua área e marca os itens pelo celular.",
+    who: ALL,
+    actions: [
+      "Escalar membros por área em cada evento",
+      "Acompanhar o checklist de cada escalado",
+      "Cadastrar membros (só nome e WhatsApp, sem login) e áreas de serviço",
+    ],
+  },
+  "/admin/midia": {
+    purpose:
+      "Demandas da equipe de mídia (posts, artes, captações, gravações) com prazos, responsáveis e briefing. O robô lembra o responsável 2 dias antes e no dia do prazo.",
+    who: ALL,
+    actions: [
+      "Criar demandas do grupo ou de uma pessoa",
+      "Mudar o status: A fazer → Em produção → Em revisão → Entregue",
+      "Gerar o pacote de demandas a partir de um evento",
+    ],
+  },
+  "/admin/confirmacoes": {
+    purpose:
+      "Acompanha se os líderes confirmaram que viram os eventos do seu ministério. Sem confirmação no prazo, o pastor responsável é avisado; depois, os administradores.",
+    who: ADMIN,
+    actions: ["Ver quem confirmou e quem está pendente", "Ajustar o prazo de cada nível", "Ligar ou desligar os pedidos de confirmação"],
+  },
+  "/admin/aprovacoes": {
+    purpose:
+      "Eventos cadastrados pela equipe que esperam aprovação. Só depois de aprovados eles entram nos lembretes e no calendário público.",
+    who: ADMIN,
+    actions: ["Aprovar (vale para todas as datas de um evento que se repete)", "Recusar informando o motivo; quem cadastrou é avisado no WhatsApp"],
+  },
+  "/admin/ministerios": {
+    purpose:
+      "Cadastro dos ministérios. Cada um pode ter um grupo do WhatsApp (que recebe só os avisos dos seus eventos), um líder e um pastor responsável.",
+    who: ADMIN,
+    actions: ["Cadastrar ministérios", "Definir grupo, líder, pastor e cor", "Marcar qual é o ministério de Mídia"],
+  },
+  "/admin/usuarios": {
+    purpose:
+      "Quem pode entrar no sistema. Ao cadastrar, a pessoa recebe no WhatsApp o link de acesso, o login e uma senha temporária.",
+    who: ADMIN,
+    actions: [
+      "Perfis: Administrador (tudo), Agenda (edita eventos) e Visualizador (só vê)",
+      "Reenviar o acesso quando o link expirar",
+      "Editar e excluir usuários",
+    ],
+  },
+  "/admin/notifications": {
+    purpose: "Avisos do sistema de atendimento por IA para os administradores (novos clientes, pedidos de suporte etc.).",
+    who: ADMIN,
+  },
+  "/admin/audit": {
+    purpose: "Histórico das ações feitas pelos administradores (quem fez o quê e quando), para conferência.",
+    who: ADMIN,
+  },
+  "/admin/health": {
+    purpose: "Monitoramento da infraestrutura do atendimento por IA: robôs pausados, interrupções e situação dos serviços.",
+    who: ADMIN,
+  },
+  "/admin/settings": {
+    purpose: "Configurações gerais do sistema de atendimento por IA.",
+    who: ADMIN,
+  },
+};
+
+/** Explicação da tela atual (rotas com parâmetro usam o prefixo, ex.: /admin/clients/:id) */
+export function helpFor(path: string): PageHelp | null {
+  if (HELP[path]) return HELP[path];
+  const prefix = Object.keys(HELP)
+    .filter((k) => k.endsWith("/") && path.startsWith(k))
+    .sort((a, b) => b.length - a.length)[0];
+  return prefix ? HELP[prefix] : null;
+}

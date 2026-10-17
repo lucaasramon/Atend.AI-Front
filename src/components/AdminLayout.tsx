@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
+import PageHelpBox from "@/components/PageHelpBox";
 import { useAuth } from "@/contexts/AuthContext";
 
 type BadgeKey = "notifications" | "approvals";
@@ -160,7 +161,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-xs text-muted-foreground">{isAdmin ? "Admin" : user?.email}</span>
           </div>
         </header>
-        <div className="p-6">{children}</div>
+        <div className="p-6">
+          <PageHelpBox path={location.pathname} />
+          {children}
+        </div>
       </main>
     </div>
   );
