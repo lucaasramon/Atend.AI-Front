@@ -50,34 +50,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface ReminderRecord {
-  offset_days: number;
-  status: "sent" | "skipped";
-  sent_at: string;
-}
-
-interface EventItem {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  starts_at: string;
-  ends_at: string | null;
-  is_public: boolean;
-  group_jid: string | null;
-  reminders: ReminderRecord[];
-}
+import { EventItem, Group, ReminderConfig, eventOffsets, parseOffsets, whenLabel } from "@/lib/events";
+import EventFormDialog from "@/components/events/EventFormDialog";
 
 interface Preview {
   offset_days: number;
   send_at: string;
   message: string;
-}
-
-interface Group {
-  id: string;
-  subject: string;
-  size?: number;
 }
 
 type Settings = Record<string, string>;
@@ -86,24 +65,6 @@ interface RobotGroup extends Group {
   allowed: boolean;
   is_default: boolean;
 }
-
-interface ReminderConfig {
-  enabled: boolean;
-  offsets: number[];
-  group_jid: string;
-  groups: Group[];
-}
-
-const emptyForm = { title: "", description: "", location: "", starts_at: "", is_public: true, group_jid: "" };
-
-const parseOffsets = (v?: string) =>
-  (v || "")
-    .split(",")
-    .map((n) => parseInt(n.trim()))
-    .filter((n) => Number.isFinite(n) && n >= 0)
-    .sort((a, b) => b - a);
-
-const whenLabel = (days: number) => (days === 0 ? "No dia" : `${days} dia${days === 1 ? "" : "s"} antes`);
 
 export default function Events() {
   const { toast } = useToast();
@@ -117,8 +78,7 @@ export default function Events() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EventItem | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
+  const [summaryPreview, setSummaryPreview] = useState<{ title: string; text: string | null } | null>(null);
 
   const [toDelete, setToDelete] = useState<EventItem | null>(null);
   const [preview, setPreview] = useState<{ event: EventItem; items: Preview[] } | null>(null);
@@ -168,7 +128,7 @@ export default function Events() {
       const start = new Date(ev.starts_at);
       if (start <= new Date()) continue;
       const done = new Set(ev.reminders.map((r) => r.offset_days));
-      const pending = offsets.filter((off) => !done.has(off));
+      const pending = eventOffsets(ev, offsets).filter((off) => !done.has(off));
       // Antecedências já vencidas viram um único envio hoje (o backend pula as demais)
       const overdue = pending.filter((off) => subDays(startOfDay(start), off) <= today);
       if (overdue.length) rows.push({ event: ev, offset: Math.min(...overdue), date: today });
@@ -184,52 +144,12 @@ export default function Events() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
     setFormOpen(true);
   };
 
   const openEdit = (ev: EventItem) => {
     setEditing(ev);
-    setForm({
-      title: ev.title,
-      description: ev.description || "",
-      location: ev.location || "",
-      starts_at: format(new Date(ev.starts_at), "yyyy-MM-dd'T'HH:mm"),
-      is_public: ev.is_public,
-      group_jid: ev.group_jid || "",
-    });
     setFormOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.title.trim() || !form.starts_at) {
-      toast({ title: "Preencha título, data e hora", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-    const body = {
-      title: form.title.trim(),
-      description: form.description.trim(),
-      location: form.location.trim(),
-      starts_at: new Date(form.starts_at).toISOString(),
-      is_public: form.is_public,
-      group_jid: form.group_jid,
-    };
-    try {
-      if (editing) {
-        await api.patch(`/api/events/${editing.id}`, body);
-        toast({ title: "Evento atualizado" });
-      } else {
-        await api.post("/api/events", body);
-        toast({ title: "Evento criado" });
-      }
-      setFormOpen(false);
-      load();
-    } catch (error: any) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleDelete = async () => {
@@ -301,8 +221,10 @@ export default function Events() {
     setSettingsForm({
       reminders_enabled: settings.reminders_enabled || "false",
       reminders_group_jid: settings.reminders_group_jid || "",
-      reminders_offsets: settings.reminders_offsets || "10,7,3,0",
+      reminders_offsets: settings.reminders_offsets || "30,21,14,10,7,3,1,0",
       reminders_template: settings.reminders_template || "",
+      summary_monthly_enabled: settings.summary_monthly_enabled || "true",
+      summary_weekly_enabled: settings.summary_weekly_enabled || "true",
     });
     setSettingsOpen(true);
   };
@@ -322,9 +244,18 @@ export default function Events() {
     }
   };
 
+  const openSummaryPreview = async (kind: "weekly" | "monthly") => {
+    try {
+      const r = await api.get<{ text: string | null }>(`/api/events/summaries/preview?kind=${kind}`);
+      setSummaryPreview({ title: kind === "weekly" ? "Resumo desta semana" : "Resumo deste mês", text: r.text });
+    } catch (error: any) {
+      toast({ title: "Erro ao gerar prévia", description: error.message, variant: "destructive" });
+    }
+  };
+
   const reminderBadges = (ev: EventItem) => {
     const start = new Date(ev.starts_at);
-    return offsets.map((off) => {
+    return eventOffsets(ev, offsets).map((off) => {
       const rec = ev.reminders.find((r) => r.offset_days === off);
       const date = subDays(startOfDay(start), off);
       if (rec?.status === "sent")
@@ -459,61 +390,7 @@ export default function Events() {
       )}
 
       {/* Criar / editar */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar evento" : "Novo evento"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
-              <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="starts_at">Data e hora *</Label>
-                <Input id="starts_at" type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Local</Label>
-                <Input id="location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea id="description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Grupo do WhatsApp</Label>
-              <Select value={form.group_jid || "default"} onValueChange={(v) => setForm({ ...form, group_jid: v === "default" ? "" : v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">Grupo padrão ({groupName(config.group_jid)})</SelectItem>
-                  {groupChoices.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>{g.subject}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between rounded-md border border-border p-3">
-              <div>
-                <p className="text-sm font-medium">Mostrar no calendário público</p>
-                <p className="text-xs text-muted-foreground">Os lembretes no grupo são enviados de qualquer forma</p>
-              </div>
-              <Switch checked={form.is_public} onCheckedChange={(v) => setForm({ ...form, is_public: v })} />
-            </div>
-            {editing && (
-              <p className="text-xs text-muted-foreground">Se mudar a data, os lembretes deste evento serão enviados novamente.</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EventFormDialog open={formOpen} onOpenChange={setFormOpen} event={editing} config={config} onSaved={load} />
 
       {/* Prévia */}
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
@@ -569,9 +446,27 @@ export default function Events() {
                 id="offsets"
                 value={settingsForm.reminders_offsets || ""}
                 onChange={(e) => setSettingsForm({ ...settingsForm, reminders_offsets: e.target.value })}
-                placeholder="10,7,3,0"
+                placeholder="30,21,14,10,7,3,1,0"
               />
-              <p className="text-xs text-muted-foreground">0 = no dia do evento.</p>
+              <p className="text-xs text-muted-foreground">0 = no dia do evento. Cada evento pode ter as suas próprias.</p>
+            </div>
+            <div className="space-y-2 rounded-md border border-border p-3">
+              <p className="text-sm font-medium">Resumos automáticos no grupo padrão</p>
+              {([
+                ["summary_monthly_enabled", "Resumo do mês, todo dia 1º", "monthly"],
+                ["summary_weekly_enabled", "Resumo da semana, toda segunda-feira", "weekly"],
+              ] as const).map(([key, label, kind]) => (
+                <div key={key} className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{label}</span>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => openSummaryPreview(kind)}>Prévia</Button>
+                    <Switch
+                      checked={settingsForm[key] !== "false"}
+                      onCheckedChange={(v) => setSettingsForm({ ...settingsForm, [key]: v ? "true" : "false" })}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="space-y-2">
               <Label htmlFor="template">Texto da mensagem</Label>
@@ -590,6 +485,20 @@ export default function Events() {
             <Button variant="outline" onClick={() => setSettingsOpen(false)}>Cancelar</Button>
             <Button onClick={saveSettings}>Salvar</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prévia do resumo */}
+      <Dialog open={!!summaryPreview} onOpenChange={(o) => !o && setSummaryPreview(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{summaryPreview?.title}</DialogTitle>
+          </DialogHeader>
+          {summaryPreview?.text ? (
+            <pre className="whitespace-pre-wrap font-sans text-sm rounded-md bg-muted p-3">{summaryPreview.text}</pre>
+          ) : (
+            <p className="text-sm text-muted-foreground">Nenhum evento no período — nesse caso o resumo não é enviado.</p>
+          )}
         </DialogContent>
       </Dialog>
 
