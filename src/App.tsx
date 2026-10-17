@@ -31,6 +31,7 @@ import ClientKnowledgeBase from "@/pages/client/ClientKnowledgeBase";
 import ClientHelp from "@/pages/client/ClientHelp";
 import AdminNotifications from "@/pages/AdminNotifications";
 import Events from "@/pages/Events";
+import CalendarPage from "@/pages/CalendarPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/agenda" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/calendario" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminLayout><AdminNotifications /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/audit" element={<AdminProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/automations" element={<AdminProtectedRoute><AdminLayout><Automations /></AdminLayout></AdminProtectedRoute>} />

@@ -16,6 +16,7 @@ import {
   Moon,
   LogOut,
   CalendarDays,
+  CalendarRange,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/clients", label: "Clientes", icon: Users },
   { path: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+  { path: "/admin/calendario", label: "Calendário", icon: CalendarRange },
   { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: true },
   { path: "/admin/audit", label: "Auditoria", icon: ScrollText },
   { path: "/admin/automations", label: "Automações", icon: Bot },
@@ -42,7 +44,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, signOut } = useAuth();
   const isAdmin = user?.role === "admin";
   // Usuário "agenda" só vê a agenda
-  const visibleItems = isAdmin ? navItems : navItems.filter((item) => item.path === "/admin/agenda");
+  const visibleItems = isAdmin
+    ? navItems
+    : navItems.filter((item) => item.path === "/admin/agenda" || item.path === "/admin/calendario");
 
   const handleLogout = () => signOut();
 
