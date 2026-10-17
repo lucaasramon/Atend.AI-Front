@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cap } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle2, Clock, Eye, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
@@ -86,7 +87,7 @@ export default function AcksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Confirmações</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -128,8 +129,8 @@ export default function AcksPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <div>
                     <p className="font-medium">{c.title}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {format(new Date(c.starts_at), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {c.ministry}
+                    <p className="text-xs text-muted-foreground">
+                      {cap(format(new Date(c.starts_at), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR }))} · {c.ministry}
                     </p>
                   </div>
                   {c.confirmed_at ? (

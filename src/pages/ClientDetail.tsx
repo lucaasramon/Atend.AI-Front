@@ -88,7 +88,7 @@ export default function ClientDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         <Link to="/admin/clients">
           <Button variant="ghost" size="sm" className="text-muted-foreground">
             <ArrowLeft className="w-4 h-4" />

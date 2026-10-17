@@ -289,7 +289,7 @@ export default function Events() {
 
   const renderEvent = (ev: EventItem) => (
     <div key={ev.id} className="rounded-lg border border-border bg-card p-4 shadow-card space-y-3 hover:border-primary/30 transition-colors">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-medium text-card-foreground">{ev.title}</p>
@@ -325,7 +325,7 @@ export default function Events() {
           )}
           {ev.description && <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{ev.description}</p>}
         </div>
-        <div className="flex gap-1 shrink-0">
+        <div className="flex flex-wrap gap-1 shrink-0 -ml-2 sm:ml-0">
           <Button
             size="sm"
             variant="ghost"
@@ -351,7 +351,7 @@ export default function Events() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Agenda</h1>
           <p className="text-sm text-muted-foreground mt-1">

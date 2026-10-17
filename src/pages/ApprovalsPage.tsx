@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cap } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle2, Clock, Loader2, MapPin, ThumbsDown, ThumbsUp, User } from "lucide-react";
@@ -85,9 +86,9 @@ export default function ApprovalsPage() {
                 <div className="min-w-0 space-y-1">
                   <p className="font-medium">{ev.title}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1 capitalize">
+                    <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {format(new Date(ev.starts_at), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {cap(format(new Date(ev.starts_at), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR }))}
                       {ev.ends_at && ` até ${format(new Date(ev.ends_at), "HH:mm")}`}
                     </span>
                     {locationLabel(ev) && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{locationLabel(ev)}</span>}

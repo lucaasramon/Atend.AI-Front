@@ -46,7 +46,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
               <span className="font-semibold text-sm">AtendIA</span>
             </Link>
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-1">
               {navItems.map((item) => {
                 const active = location.pathname === item.path;
                 const locked = isFeatureLocked(item.requiredFeature);
@@ -82,23 +82,23 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <SupportDialog />
             </div>
             <NotificationBell />
             <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-            <Button variant="ghost" size="sm" className="hidden md:flex" onClick={handleLogout}>
+            <Button variant="ghost" size="sm" className="hidden lg:flex" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> Sair
             </Button>
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
         {mobileOpen && (
-          <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
+          <div className="lg:hidden border-t border-border px-4 py-3 space-y-1 max-h-[70vh] overflow-y-auto">
             {navItems.map((item) => {
               const active = location.pathname === item.path;
               const locked = isFeatureLocked(item.requiredFeature);

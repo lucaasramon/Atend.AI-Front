@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cap } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -70,8 +71,8 @@ export default function MemberChecklist() {
             <>
               <div className="rounded-md bg-muted p-3 text-sm space-y-1">
                 <p className="font-medium">{info.event}</p>
-                <p className="text-muted-foreground capitalize">
-                  {format(new Date(info.starts_at), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                <p className="text-muted-foreground">
+                  {cap(format(new Date(info.starts_at), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }))}
                 </p>
                 {info.location && <p className="text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{info.location}</p>}
                 <p>🎯 {info.ministry} · <b>{info.area}</b></p>

@@ -55,7 +55,7 @@ export default function AdminNotifications() {
         <p className="text-sm text-muted-foreground mt-1">{notifications.filter(n => !n.read).length} não lidas</p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card shadow-card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : notifications.length === 0 ? (
@@ -90,7 +90,7 @@ export default function AdminNotifications() {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">{total} notificações</p>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="w-4 h-4" /></Button>

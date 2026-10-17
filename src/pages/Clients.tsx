@@ -204,7 +204,7 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Clientes</h1>
           <p className="text-sm text-muted-foreground mt-1">{total} cadastrados</p>
@@ -215,13 +215,13 @@ export default function Clients() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar por empresa, nome ou WhatsApp..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Select value={planFilter} onValueChange={(v) => { setPlanFilter(v); setPage(0); }}>
-            <SelectTrigger className="w-[130px] bg-card border-border">
+            <SelectTrigger className="flex-1 min-w-[130px] sm:flex-none sm:w-[130px] bg-card border-border">
               <Filter className="w-3 h-3 mr-1" /><SelectValue placeholder="Plano" />
             </SelectTrigger>
             <SelectContent>
@@ -232,7 +232,7 @@ export default function Clients() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
-            <SelectTrigger className="w-[130px] bg-card border-border"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="flex-1 min-w-[130px] sm:flex-none sm:w-[130px] bg-card border-border"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos status</SelectItem>
               <SelectItem value="active">Ativo</SelectItem>
@@ -242,7 +242,7 @@ export default function Clients() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card shadow-card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : filtered.length === 0 ? (
@@ -250,7 +250,7 @@ export default function Clients() {
             <p className="text-sm">{search ? "Nenhum cliente encontrado para a busca" : "Nenhum cliente cadastrado ainda"}</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-5 py-3 text-xs text-muted-foreground font-medium">Empresa</th>

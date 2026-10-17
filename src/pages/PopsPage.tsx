@@ -173,7 +173,7 @@ export default function PopsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">POPs</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -195,7 +195,7 @@ export default function PopsPage() {
             const done = run?.checked.length || 0;
             return (
               <div key={p.id} className={`rounded-lg border border-border bg-card p-4 shadow-card space-y-3 ${p.active ? "" : "opacity-60"}`}>
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-medium">{p.title}</p>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-0.5">
@@ -209,7 +209,7 @@ export default function PopsPage() {
                       {!p.active && <Badge variant="outline">Pausado</Badge>}
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex flex-wrap gap-1 shrink-0 -ml-2 sm:ml-0">
                     <Button size="icon" variant="ghost" title="Histórico" onClick={() => openHistory(p)}><History className="w-4 h-4" /></Button>
                     {isAdmin && (
                       <>
@@ -288,7 +288,7 @@ export default function PopsPage() {
               <Label htmlFor="pop-link">Anexo (link do Drive, PDF...)</Label>
               <Input id="pop-link" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="https://" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Repetição</Label>
                 <Select value={form.recurrence} onValueChange={(v) => setForm({ ...form, recurrence: v })}>

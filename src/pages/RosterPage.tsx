@@ -249,8 +249,8 @@ export default function RosterPage() {
                         const total = en.steps_count || 1;
                         const done = Math.min(en.checked.length, total);
                         return (
-                          <div key={en.id} className="flex items-center gap-2 text-sm">
-                            <span className="flex-1">{en.member}</span>
+                          <div key={en.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                            <span className="flex-1 min-w-[120px]">{en.member}</span>
                             <Badge variant="outline" className={done >= total ? "text-success border-success/40" : ""}>
                               {en.steps_count ? `${done}/${total}` : done ? "confirmado" : "—"}
                             </Badge>

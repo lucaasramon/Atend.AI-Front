@@ -64,7 +64,7 @@ export default function ClientProfile() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-lg">Informações Pessoais</CardTitle>
             <Badge variant="outline" className="capitalize">{planId || "starter"}</Badge>
           </div>

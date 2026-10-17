@@ -71,7 +71,7 @@ export default function Health() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Saúde & Logs</h1>
           <p className="text-sm text-muted-foreground mt-1">Monitoramento da infraestrutura</p>
@@ -107,7 +107,7 @@ export default function Health() {
         ))}
       </div>
 
-      <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card shadow-card overflow-x-auto">
         <div className="px-5 py-3 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-warning" />

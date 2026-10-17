@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cap } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -75,8 +76,8 @@ export default function ConfirmAck() {
                 {info.pending.map((p) => (
                   <div key={p.id} className="rounded-md border border-border px-3 py-2">
                     <p className="text-sm font-medium">{p.title}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {format(new Date(p.starts_at), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {p.ministry}
+                    <p className="text-xs text-muted-foreground">
+                      {cap(format(new Date(p.starts_at), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR }))} · {p.ministry}
                     </p>
                   </div>
                 ))}

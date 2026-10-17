@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { cap } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
   addMonths,
@@ -115,7 +116,7 @@ export default function CalendarPage() {
   );
 
   const monthView = (
-    <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-card shadow-card overflow-x-auto">
       <div className="grid grid-cols-7 border-b border-border">
         {WEEKDAYS.map((d) => (
           <div key={d} className="py-2 text-center text-xs font-medium text-muted-foreground uppercase">{d}</div>
@@ -215,7 +216,7 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Calendário</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -241,8 +242,8 @@ export default function CalendarPage() {
           <Button variant="ghost" size="icon" title="Próximo" onClick={() => setCursor(view === "month" ? addMonths(cursor, 1) : addYears(cursor, 1))}>
             <ChevronRight className="w-4 h-4" />
           </Button>
-          <span className="text-lg font-medium capitalize min-w-[120px]">
-            {view === "month" ? format(cursor, "MMMM 'de' yyyy", { locale: ptBR }) : format(cursor, "yyyy")}
+          <span className="text-lg font-medium min-w-[120px]">
+            {view === "month" ? cap(format(cursor, "MMMM 'de' yyyy", { locale: ptBR })) : format(cursor, "yyyy")}
           </span>
         </div>
       </div>
@@ -271,8 +272,8 @@ export default function CalendarPage() {
       <Dialog open={!!dayList} onOpenChange={(o) => !o && setDayList(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="capitalize">
-              {dayList && format(dayList, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            <DialogTitle>
+              {dayList && cap(format(dayList, "EEEE, dd 'de' MMMM", { locale: ptBR }))}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
@@ -319,8 +320,8 @@ export default function CalendarPage() {
                 )}
                 <p className="flex items-start gap-2">
                   <Clock className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-                  <span className="capitalize">
-                    {format(new Date(selected.starts_at), "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                  <span>
+                    {cap(format(new Date(selected.starts_at), "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR }))}
                     {selected.ends_at && ` até ${format(new Date(selected.ends_at), "HH:mm")}`}
                   </span>
                 </p>

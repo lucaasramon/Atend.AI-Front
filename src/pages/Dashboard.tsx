@@ -152,7 +152,7 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground text-center py-6">Nenhum cliente cadastrado ainda</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 text-xs text-muted-foreground font-medium">Cliente</th>

@@ -226,7 +226,7 @@ export default function MediaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Mídia</h1>
           <p className="text-sm text-muted-foreground mt-1">Prazos e demandas da equipe de mídia (do grupo e individuais)</p>
@@ -285,7 +285,7 @@ export default function MediaPage() {
               <Label htmlFor="m-title">Título *</Label>
               <Input id="m-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex.: Posts da conferência" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
