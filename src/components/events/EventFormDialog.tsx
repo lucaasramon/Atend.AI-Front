@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Conflict, EventItem, Location, Ministry, ReminderConfig, parseOffsets, whenLabel } from "@/lib/events";
+import { CATEGORIES, Conflict, EventItem, Location, Ministry, ReminderConfig, parseOffsets, whenLabel } from "@/lib/events";
 import { useAuth } from "@/contexts/AuthContext";
 import ChipSelect from "./ChipSelect";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,19 @@ const emptyForm = {
   offsets: "",
   ministry_ids: [] as string[],
   location_ids: [] as string[],
+  category: "",
+  repeat: "none",
+  repeat_until: "",
 };
+
+// Opções de repetição (só no cadastro)
+const REPEATS: { value: string; label: string; freq?: string; interval?: number }[] = [
+  { value: "none", label: "Não se repete" },
+  { value: "weekly", label: "Toda semana", freq: "weekly", interval: 1 },
+  { value: "biweekly", label: "A cada 2 semanas", freq: "weekly", interval: 2 },
+  { value: "monthly_day", label: "Todo mês, no mesmo dia", freq: "monthly_day" },
+  { value: "monthly_nth", label: "Todo mês, na mesma semana (ex.: toda 1ª sexta)", freq: "monthly_nth" },
+];
 
 export default function EventFormDialog({ open, onOpenChange, event, config, onSaved }: Props) {
   const { toast } = useToast();
@@ -75,6 +87,9 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             offsets: (event.reminder_offsets || config.offsets).join(", "),
             ministry_ids: event.ministries.map((m) => m.id),
             location_ids: event.locations.map((l) => l.id),
+            category: event.category || "",
+            repeat: "none",
+            repeat_until: "",
           }
         : { ...emptyForm, offsets: config.offsets.join(", ") }
     );
@@ -111,8 +126,15 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       toast({ title: "Informe ao menos uma antecedência", variant: "destructive" });
       return;
     }
+    const rep = REPEATS.find((r) => r.value === form.repeat);
+    if (!event && rep?.freq && !form.repeat_until) {
+      toast({ title: "Informe até quando o evento se repete", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const body = {
+      category: form.category || null,
+      ...(!event && rep?.freq ? { repeat: { freq: rep.freq, interval: rep.interval, until: form.repeat_until } } : {}),
       title: form.title.trim(),
       description: form.description.trim(),
       location: form.location.trim(),
@@ -126,12 +148,13 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
     };
     try {
       const saved = event
-        ? await api.patch<EventItem>(`/api/events/${event.id}`, body)
-        : await api.post<EventItem>("/api/events", body);
+        ? await api.patch<EventItem & { series_count?: number }>(`/api/events/${event.id}`, body)
+        : await api.post<EventItem & { series_count?: number }>("/api/events", body);
+      const many = (saved.series_count || 1) > 1 ? `${saved.series_count} datas criadas. ` : "";
       toast(
         saved.status === "pending"
-          ? { title: "Enviado para aprovação", description: "Os administradores foram avisados." }
-          : { title: event ? "Evento atualizado" : "Evento criado" }
+          ? { title: "Enviado para aprovação", description: `${many}Os administradores foram avisados.` }
+          : { title: event ? "Evento atualizado" : "Evento criado", description: many || undefined }
       );
       onOpenChange(false);
       onSaved();
@@ -153,6 +176,23 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             <Label htmlFor="title">Título *</Label>
             <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           </div>
+          <div className="space-y-2">
+            <Label>Categoria</Label>
+            <Select value={form.category || "none"} onValueChange={(v) => setForm({ ...form, category: v === "none" ? "" : v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem categoria</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                      {c.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="starts_at">Início *</Label>
@@ -163,6 +203,30 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
               <Input id="ends_at" type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} />
             </div>
           </div>
+          {!event && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Repetir</Label>
+                <Select value={form.repeat} onValueChange={(v) => setForm({ ...form, repeat: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {REPEATS.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.repeat !== "none" && (
+                <div className="space-y-2">
+                  <Label htmlFor="repeat_until">Até</Label>
+                  <Input id="repeat_until" type="date" value={form.repeat_until} onChange={(e) => setForm({ ...form, repeat_until: e.target.value })} />
+                </div>
+              )}
+            </div>
+          )}
+          {event?.series_id && (
+            <p className="text-xs text-muted-foreground">🔁 Este evento faz parte de uma série. A edição vale só para esta data.</p>
+          )}
           <div className="space-y-2">
             <Label>Locais</Label>
             <ChipSelect

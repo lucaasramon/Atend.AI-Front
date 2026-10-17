@@ -37,6 +37,7 @@ import FirstAccess from "@/pages/FirstAccess";
 import MinistriesPage from "@/pages/MinistriesPage";
 import LocationsPage from "@/pages/LocationsPage";
 import ApprovalsPage from "@/pages/ApprovalsPage";
+import PopsPage from "@/pages/PopsPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="/admin/agenda" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/calendario" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/pops" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><PopsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/aprovacoes" element={<AdminProtectedRoute><AdminLayout><ApprovalsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/ministerios" element={<AdminProtectedRoute><AdminLayout><MinistriesPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/usuarios" element={<AdminProtectedRoute><AdminLayout><UsersPage /></AdminLayout></AdminProtectedRoute>} />

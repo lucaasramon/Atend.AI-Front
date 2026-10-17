@@ -23,7 +23,48 @@ export interface EventItem {
   approved_by_name: string | null;
   ministries: EventMinistry[];
   locations: EventLocation[];
+  category: string | null;
+  series_id: string | null;
+  tasks_total: number;
+  tasks_done: number;
 }
+
+export interface EventTask {
+  id: string;
+  event_id: string;
+  title: string;
+  assignee_id: string | null;
+  assignee_name: string | null;
+  assignee_full_name: string | null;
+  due_date: string | null;
+  done: boolean;
+  done_by_name: string | null;
+}
+
+export interface Person {
+  id: string;
+  name: string;
+  has_whatsapp: boolean;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  items: { title: string; days_before?: number }[];
+}
+
+/** Categorias de evento e suas cores no calendário */
+export const CATEGORIES: { value: string; label: string; color: string }[] = [
+  { value: "culto", label: "Culto", color: "#2563eb" },
+  { value: "conferencia", label: "Conferência", color: "#9333ea" },
+  { value: "reuniao", label: "Reunião", color: "#64748b" },
+  { value: "ensaio", label: "Ensaio", color: "#0891b2" },
+  { value: "evento", label: "Evento", color: "#16a34a" },
+  { value: "acao_social", label: "Ação social", color: "#ea580c" },
+  { value: "outro", label: "Outro", color: "#ca8a04" },
+];
+
+export const categoryOf = (value?: string | null) => CATEGORIES.find((c) => c.value === value);
 
 export type EventStatus = "pending" | "approved" | "rejected";
 
@@ -99,8 +140,9 @@ export function locationLabel(ev: { location?: string | null; locations?: EventL
   return names || free;
 }
 
-/** Cor do evento: a do primeiro ministério com cor */
-export const eventColor = (ev: { ministries?: EventMinistry[] }) => ev.ministries?.find((m) => m.color)?.color || null;
+/** Cor do evento: a da categoria; sem categoria, a do primeiro ministério com cor */
+export const eventColor = (ev: { ministries?: EventMinistry[]; category?: string | null }) =>
+  categoryOf(ev.category)?.color || ev.ministries?.find((m) => m.color)?.color || null;
 
 export const STATUS_LABEL: Record<EventStatus, string> = {
   pending: "Aguardando aprovação",

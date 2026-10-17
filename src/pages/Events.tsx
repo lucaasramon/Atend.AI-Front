@@ -14,6 +14,8 @@ import {
   Settings2,
   Lock,
   Users,
+  ListChecks,
+  FileUp,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +54,9 @@ import {
 
 import { EventItem, Group, ReminderConfig, STATUS_LABEL, eventOffsets, locationLabel, parseOffsets, whenLabel } from "@/lib/events";
 import EventFormDialog from "@/components/events/EventFormDialog";
+import EventChecklistDialog from "@/components/events/EventChecklistDialog";
+import ImportEventsDialog from "@/components/events/ImportEventsDialog";
+import ChecklistTemplatesDialog from "@/components/events/ChecklistTemplatesDialog";
 
 interface Preview {
   offset_days: number;
@@ -81,6 +86,9 @@ export default function Events() {
   const [summaryPreview, setSummaryPreview] = useState<{ title: string; text: string | null } | null>(null);
 
   const [toDelete, setToDelete] = useState<EventItem | null>(null);
+  const [checklistEvent, setChecklistEvent] = useState<EventItem | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [preview, setPreview] = useState<{ event: EventItem; items: Preview[] } | null>(null);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -152,11 +160,11 @@ export default function Events() {
     setFormOpen(true);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (scope?: "future") => {
     if (!toDelete) return;
     try {
-      await api.delete(`/api/events/${toDelete.id}`);
-      toast({ title: "Evento excluído" });
+      const r = await api.delete<{ deleted: number }>(`/api/events/${toDelete.id}${scope ? "?scope=future" : ""}`);
+      toast({ title: r.deleted > 1 ? `${r.deleted} datas excluídas` : "Evento excluído" });
       setToDelete(null);
       load();
     } catch (error: any) {
@@ -318,6 +326,16 @@ export default function Events() {
           {ev.description && <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{ev.description}</p>}
         </div>
         <div className="flex gap-1 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            title="Checklist do evento"
+            className={ev.tasks_total && ev.tasks_done === ev.tasks_total ? "text-success" : ""}
+            onClick={() => setChecklistEvent(ev)}
+          >
+            <ListChecks className="w-4 h-4" />
+            {ev.tasks_total > 0 && <span className="ml-1 text-xs">{ev.tasks_done}/{ev.tasks_total}</span>}
+          </Button>
           <Button size="icon" variant="ghost" title="Prévia da mensagem" onClick={() => openPreview(ev)}><Eye className="w-4 h-4" /></Button>
           {canEdit && (
             <>
@@ -340,9 +358,13 @@ export default function Events() {
             Eventos do calendário e lembretes automáticos no grupo do WhatsApp
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {canEdit && (
+            <Button variant="outline" onClick={() => setImportOpen(true)}><FileUp className="w-4 h-4 mr-2" />Importar</Button>
+          )}
           {isAdmin && (
             <>
+              <Button variant="outline" onClick={() => setTemplatesOpen(true)}><ListChecks className="w-4 h-4 mr-2" />Modelos</Button>
               <Button variant="outline" onClick={openGroups}><Users className="w-4 h-4 mr-2" />Grupos</Button>
               <Button variant="outline" onClick={openSettings}><Settings2 className="w-4 h-4 mr-2" />Configurar</Button>
               <Button variant="outline" onClick={runNow} disabled={running}>
@@ -571,6 +593,15 @@ export default function Events() {
         </DialogContent>
       </Dialog>
 
+      <EventChecklistDialog
+        event={checklistEvent}
+        canEdit={canEdit}
+        onOpenChange={(o) => !o && setChecklistEvent(null)}
+        onChanged={load}
+      />
+      <ImportEventsDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} />
+      <ChecklistTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
+
       {/* Excluir */}
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
@@ -578,11 +609,15 @@ export default function Events() {
             <AlertDialogTitle>Excluir evento?</AlertDialogTitle>
             <AlertDialogDescription>
               “{toDelete?.title}” será removido do calendário e nenhum lembrete será mais enviado.
+              {toDelete?.series_id && " Este evento faz parte de uma série que se repete."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+            {toDelete?.series_id && (
+              <AlertDialogAction onClick={() => handleDelete("future")}>Esta e as próximas</AlertDialogAction>
+            )}
+            <AlertDialogAction onClick={() => handleDelete()}>{toDelete?.series_id ? "Só esta data" : "Excluir"}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
