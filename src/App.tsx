@@ -34,10 +34,16 @@ import Events from "@/pages/Events";
 import CalendarPage from "@/pages/CalendarPage";
 import UsersPage from "@/pages/UsersPage";
 import FirstAccess from "@/pages/FirstAccess";
+import MinistriesPage from "@/pages/MinistriesPage";
+import LocationsPage from "@/pages/LocationsPage";
+import ApprovalsPage from "@/pages/ApprovalsPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Perfis da equipe da agenda
+const TEAM = ["admin", "agenda", "viewer"];
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -71,8 +77,11 @@ const App = () => (
               <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/agenda" element={<AdminProtectedRoute roles={["admin", "agenda", "viewer"]}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/calendario" element={<AdminProtectedRoute roles={["admin", "agenda", "viewer"]}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/agenda" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/calendario" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/aprovacoes" element={<AdminProtectedRoute><AdminLayout><ApprovalsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/ministerios" element={<AdminProtectedRoute><AdminLayout><MinistriesPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/usuarios" element={<AdminProtectedRoute><AdminLayout><UsersPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminLayout><AdminNotifications /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/audit" element={<AdminProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></AdminProtectedRoute>} />

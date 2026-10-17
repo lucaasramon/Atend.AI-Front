@@ -17,6 +17,38 @@ export interface EventItem {
   group_jid: string | null;
   reminder_offsets: number[] | null;
   reminders: ReminderRecord[];
+  status: EventStatus;
+  rejection_reason: string | null;
+  created_by_name: string | null;
+  approved_by_name: string | null;
+  ministries: EventMinistry[];
+  locations: EventLocation[];
+}
+
+export type EventStatus = "pending" | "approved" | "rejected";
+
+export interface EventMinistry {
+  id: string;
+  name: string;
+  color: string | null;
+  group_jid: string | null;
+}
+
+export interface EventLocation {
+  id: string;
+  name: string;
+}
+
+export interface Ministry extends EventMinistry {
+  leader_id: string | null;
+  pastor_id: string | null;
+  leader_name: string | null;
+  pastor_name: string | null;
+  is_media: boolean;
+}
+
+export interface Location extends EventLocation {
+  active: boolean;
 }
 
 export interface Group {
@@ -30,6 +62,7 @@ export interface ReminderConfig {
   offsets: number[];
   group_jid: string;
   groups: Group[];
+  approval_required: boolean;
 }
 
 export interface Conflict {
@@ -57,3 +90,20 @@ export const eventOffsets = (ev: Pick<EventItem, "reminder_offsets">, defaults: 
   ev.reminder_offsets?.length ? [...ev.reminder_offsets].sort((a, b) => b - a) : defaults;
 
 export const whenLabel = (days: number) => (days === 0 ? "No dia" : `${days} dia${days === 1 ? "" : "s"} antes`);
+
+/** "Templo, Sala das Crianças — entrada lateral" (locais cadastrados + observação livre) */
+export function locationLabel(ev: { location?: string | null; locations?: EventLocation[] }): string {
+  const names = (ev.locations || []).map((l) => l.name).join(", ");
+  const free = (ev.location || "").trim();
+  if (names && free) return `${names} — ${free}`;
+  return names || free;
+}
+
+/** Cor do evento: a do primeiro ministério com cor */
+export const eventColor = (ev: { ministries?: EventMinistry[] }) => ev.ministries?.find((m) => m.color)?.color || null;
+
+export const STATUS_LABEL: Record<EventStatus, string> = {
+  pending: "Aguardando aprovação",
+  approved: "Aprovado",
+  rejected: "Recusado",
+};

@@ -50,7 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { EventItem, Group, ReminderConfig, eventOffsets, parseOffsets, whenLabel } from "@/lib/events";
+import { EventItem, Group, ReminderConfig, STATUS_LABEL, eventOffsets, locationLabel, parseOffsets, whenLabel } from "@/lib/events";
 import EventFormDialog from "@/components/events/EventFormDialog";
 
 interface Preview {
@@ -72,7 +72,7 @@ export default function Events() {
   const isAdmin = user?.role === "admin";
   const canEdit = user?.role === "admin" || user?.role === "agenda";
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [config, setConfig] = useState<ReminderConfig>({ enabled: false, offsets: [], group_jid: "", groups: [] });
+  const [config, setConfig] = useState<ReminderConfig>({ enabled: false, offsets: [], group_jid: "", groups: [], approval_required: false });
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
 
@@ -126,7 +126,7 @@ export default function Events() {
     const rows: { event: EventItem; offset: number; date: Date }[] = [];
     for (const ev of events) {
       const start = new Date(ev.starts_at);
-      if (start <= new Date()) continue;
+      if (start <= new Date() || ev.status !== "approved") continue;
       const done = new Set(ev.reminders.map((r) => r.offset_days));
       const pending = eventOffsets(ev, offsets).filter((off) => !done.has(off));
       // Antecedências já vencidas viram um único envio hoje (o backend pula as demais)
@@ -288,15 +288,33 @@ export default function Events() {
             {!ev.is_public && (
               <Badge variant="outline" className="gap-1"><Lock className="w-3 h-3" />Privado</Badge>
             )}
+            {ev.status !== "approved" && (
+              <Badge variant="outline" className={ev.status === "pending" ? "text-warning border-warning/40" : "text-destructive border-destructive/40"}>
+                {STATUS_LABEL[ev.status]}
+              </Badge>
+            )}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {format(new Date(ev.starts_at), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             </span>
-            {ev.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{ev.location}</span>}
-            <span>Grupo: {groupName(ev.group_jid || config.group_jid)}</span>
+            {locationLabel(ev) && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{locationLabel(ev)}</span>}
+            {ev.group_jid && <span>Grupo extra: {groupName(ev.group_jid)}</span>}
           </div>
+          {ev.ministries.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {ev.ministries.map((m) => (
+                <span key={m.id} className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px]">
+                  {m.color && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: m.color }} />}
+                  {m.name}
+                </span>
+              ))}
+            </div>
+          )}
+          {ev.status === "rejected" && ev.rejection_reason && (
+            <p className="text-xs text-destructive mt-2">Motivo da recusa: {ev.rejection_reason}</p>
+          )}
           {ev.description && <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{ev.description}</p>}
         </div>
         <div className="flex gap-1 shrink-0">

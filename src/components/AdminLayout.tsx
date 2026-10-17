@@ -18,6 +18,9 @@ import {
   CalendarDays,
   CalendarRange,
   UserCog,
+  MapPin,
+  ClipboardCheck,
+  Church,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -25,13 +28,19 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
+type BadgeKey = "notifications" | "approvals";
+
+// team: também aparece para os perfis "agenda" e "viewer"
+const navItems: { path: string; label: string; icon: typeof LayoutDashboard; badge?: BadgeKey; team?: boolean }[] = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/clients", label: "Clientes", icon: Users },
-  { path: "/admin/agenda", label: "Agenda", icon: CalendarDays },
-  { path: "/admin/calendario", label: "Calendário", icon: CalendarRange },
+  { path: "/admin/agenda", label: "Agenda", icon: CalendarDays, team: true },
+  { path: "/admin/calendario", label: "Calendário", icon: CalendarRange, team: true },
+  { path: "/admin/locais", label: "Locais", icon: MapPin, team: true },
+  { path: "/admin/aprovacoes", label: "Aprovações", icon: ClipboardCheck, badge: "approvals" },
+  { path: "/admin/ministerios", label: "Ministérios", icon: Church },
   { path: "/admin/usuarios", label: "Usuários", icon: UserCog },
-  { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: true },
+  { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: "notifications" },
   { path: "/admin/audit", label: "Auditoria", icon: ScrollText },
   { path: "/admin/automations", label: "Automações", icon: Bot },
   { path: "/admin/health", label: "Saúde & Logs", icon: Activity },
@@ -40,32 +49,28 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [counts, setCounts] = useState<Record<BadgeKey, number>>({ notifications: 0, approvals: 0 });
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const isAdmin = user?.role === "admin";
-  // Usuário "agenda" só vê a agenda
-  const visibleItems = isAdmin
-    ? navItems
-    : navItems.filter((item) => item.path === "/admin/agenda" || item.path === "/admin/calendario");
+  const visibleItems = isAdmin ? navItems : navItems.filter((item) => item.team);
 
   const handleLogout = () => signOut();
 
   useEffect(() => {
     if (!isAdmin) return;
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000);
+    loadCounts();
+    const interval = setInterval(loadCounts, 30000);
     return () => clearInterval(interval);
   }, [isAdmin]);
 
-  const loadUnreadCount = async () => {
-    try {
-      const data = await api.get<{ count: number }>("/api/notifications/admin/unread-count");
-      setUnreadCount(data.count || 0);
-    } catch (error) {
-      console.error("Error loading unread count:", error);
-    }
+  const loadCounts = async () => {
+    const [n, a] = await Promise.all([
+      api.get<{ count: number }>("/api/notifications/admin/unread-count").catch(() => ({ count: 0 })),
+      api.get<{ count: number }>("/api/events/pending-count").catch(() => ({ count: 0 })),
+    ]);
+    setCounts({ notifications: n.count || 0, approvals: a.count || 0 });
   };
 
   return (
@@ -100,12 +105,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <item.icon className="w-4 h-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
-                {item.badge && unreadCount > 0 && (
+                {item.badge && counts[item.badge] > 0 && (
                   <Badge
                     variant="destructive"
                     className={`${collapsed ? 'absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs' : 'ml-auto'}`}
                   >
-                    {unreadCount}
+                    {counts[item.badge]}
                   </Badge>
                 )}
               </Link>

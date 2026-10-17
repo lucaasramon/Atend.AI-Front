@@ -21,16 +21,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EventItem, STATUS_LABEL, eventColor, locationLabel } from "@/lib/events";
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  starts_at: string;
-  ends_at: string | null;
-  is_public: boolean;
-}
+type CalendarEvent = EventItem;
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MAX_PER_DAY = 3;
@@ -48,7 +41,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     api.get<CalendarEvent[]>("/api/events")
-      .then((data) => setEvents(data || []))
+      .then((data) => setEvents((data || []).filter((e) => e.status !== "rejected")))
       .catch((error: any) => toast({ title: "Erro ao carregar eventos", description: error.message, variant: "destructive" }))
       .finally(() => setLoading(false));
   }, []);
@@ -85,12 +78,15 @@ export default function CalendarPage() {
         e.stopPropagation();
         setSelected(ev);
       }}
-      title={ev.title}
-      className={`w-full text-left truncate rounded px-1.5 py-0.5 text-[11px] leading-tight transition-colors ${
-        ev.is_public
-          ? "bg-primary/15 text-primary hover:bg-primary/25"
-          : "bg-muted text-muted-foreground hover:bg-muted/70"
+      title={ev.status === "pending" ? `${ev.title} (aguardando aprovação)` : ev.title}
+      className={`w-full text-left truncate rounded px-1.5 py-0.5 text-[11px] leading-tight transition-opacity hover:opacity-80 ${
+        ev.status === "pending" ? "border border-dashed border-warning/70 text-warning" : eventColor(ev) ? "" : "bg-primary/15 text-primary"
       }`}
+      style={
+        ev.status !== "pending" && eventColor(ev)
+          ? { backgroundColor: `${eventColor(ev)}26`, color: eventColor(ev)! }
+          : undefined
+      }
     >
       <span className="font-semibold">{format(new Date(ev.starts_at), "HH:mm")}</span> {ev.title}
     </button>
@@ -224,11 +220,24 @@ export default function CalendarPage() {
                     {selected.ends_at && ` até ${format(new Date(selected.ends_at), "HH:mm")}`}
                   </span>
                 </p>
-                {selected.location && (
+                {locationLabel(selected) && (
                   <p className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-                    {selected.location}
+                    {locationLabel(selected)}
                   </p>
+                )}
+                {selected.ministries.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {selected.ministries.map((m) => (
+                      <span key={m.id} className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs">
+                        {m.color && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: m.color }} />}
+                        {m.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {selected.status === "pending" && (
+                  <Badge variant="outline" className="text-warning border-warning/40">{STATUS_LABEL.pending}</Badge>
                 )}
                 {selected.description && (
                   <p className="whitespace-pre-line text-muted-foreground border-t border-border pt-3">

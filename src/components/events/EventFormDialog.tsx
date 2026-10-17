@@ -3,7 +3,9 @@ import { format } from "date-fns";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Conflict, EventItem, ReminderConfig, parseOffsets, whenLabel } from "@/lib/events";
+import { Conflict, EventItem, Location, Ministry, ReminderConfig, parseOffsets, whenLabel } from "@/lib/events";
+import { useAuth } from "@/contexts/AuthContext";
+import ChipSelect from "./ChipSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +35,8 @@ const emptyForm = {
   group_jid: "",
   custom_offsets: false,
   offsets: "",
+  ministry_ids: [] as string[],
+  location_ids: [] as string[],
 };
 
 export default function EventFormDialog({ open, onOpenChange, event, config, onSaved }: Props) {
@@ -40,6 +44,16 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [ministries, setMinistries] = useState<Ministry[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const { user } = useAuth();
+  const needsApproval = config.approval_required && user?.role !== "admin";
+
+  useEffect(() => {
+    if (!open) return;
+    api.get<Ministry[]>("/api/ministries").then(setMinistries).catch(() => setMinistries([]));
+    api.get<Location[]>("/api/locations").then(setLocations).catch(() => setLocations([]));
+  }, [open]);
 
   const groupName = (jid?: string | null) =>
     (jid && config.groups.find((g) => g.id === jid)?.subject) || jid || "—";
@@ -59,6 +73,8 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             group_jid: event.group_jid || "",
             custom_offsets: !!event.reminder_offsets?.length,
             offsets: (event.reminder_offsets || config.offsets).join(", "),
+            ministry_ids: event.ministries.map((m) => m.id),
+            location_ids: event.locations.map((l) => l.id),
           }
         : { ...emptyForm, offsets: config.offsets.join(", ") }
     );
@@ -74,10 +90,12 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       const qs = new URLSearchParams({ starts_at: new Date(form.starts_at).toISOString(), location: form.location });
       if (form.ends_at) qs.set("ends_at", new Date(form.ends_at).toISOString());
       if (event) qs.set("exclude_id", event.id);
+      if (form.location_ids.length) qs.set("location_ids", form.location_ids.join(","));
+      if (form.ministry_ids.length) qs.set("ministry_ids", form.ministry_ids.join(","));
       api.get<Conflict[]>(`/api/events/conflicts?${qs}`).then(setConflicts).catch(() => setConflicts([]));
     }, 500);
     return () => clearTimeout(t);
-  }, [open, form.starts_at, form.ends_at, form.location]);
+  }, [open, form.starts_at, form.ends_at, form.location, form.location_ids, form.ministry_ids]);
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.starts_at) {
@@ -103,15 +121,18 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       is_public: form.is_public,
       group_jid: form.group_jid,
       reminder_offsets: form.custom_offsets ? offsets : null,
+      ministry_ids: form.ministry_ids,
+      location_ids: form.location_ids,
     };
     try {
-      if (event) {
-        await api.patch(`/api/events/${event.id}`, body);
-        toast({ title: "Evento atualizado" });
-      } else {
-        await api.post("/api/events", body);
-        toast({ title: "Evento criado" });
-      }
+      const saved = event
+        ? await api.patch<EventItem>(`/api/events/${event.id}`, body)
+        : await api.post<EventItem>("/api/events", body);
+      toast(
+        saved.status === "pending"
+          ? { title: "Enviado para aprovação", description: "Os administradores foram avisados." }
+          : { title: event ? "Evento atualizado" : "Evento criado" }
+      );
       onOpenChange(false);
       onSaved();
     } catch (error: any) {
@@ -143,8 +164,29 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="location">Local</Label>
-            <Input id="location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+            <Label>Locais</Label>
+            <ChipSelect
+              options={locations.filter((l) => l.active || form.location_ids.includes(l.id))}
+              value={form.location_ids}
+              onChange={(ids) => setForm({ ...form, location_ids: ids })}
+              empty="Nenhum local cadastrado (o admin cadastra em Locais)"
+            />
+            <Input
+              id="location"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              placeholder={locations.length ? "Observação do local (opcional)" : "Local"}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Ministérios envolvidos</Label>
+            <ChipSelect
+              options={ministries}
+              value={form.ministry_ids}
+              onChange={(ids) => setForm({ ...form, ministry_ids: ids })}
+              empty="Nenhum ministério cadastrado (o admin cadastra em Ministérios)"
+            />
+            <p className="text-xs text-muted-foreground">Os grupos desses ministérios também recebem os lembretes.</p>
           </div>
 
           {conflicts.length > 0 && (
@@ -169,16 +211,19 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             <Textarea id="description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
           <div className="space-y-2">
-            <Label>Grupo do WhatsApp</Label>
-            <Select value={form.group_jid || "default"} onValueChange={(v) => setForm({ ...form, group_jid: v === "default" ? "" : v })}>
+            <Label>Grupo extra do WhatsApp</Label>
+            <Select value={form.group_jid || "none"} onValueChange={(v) => setForm({ ...form, group_jid: v === "none" ? "" : v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Grupo padrão ({groupName(config.group_jid)})</SelectItem>
-                {config.groups.map((g) => (
+                <SelectItem value="none">Nenhum</SelectItem>
+                {config.groups.filter((g) => g.id !== config.group_jid).map((g) => (
                   <SelectItem key={g.id} value={g.id}>{g.subject}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              O grupo principal ({groupName(config.group_jid)}) sempre recebe. Use para avisar mais um grupo.
+            </p>
           </div>
 
           <div className="space-y-2 rounded-md border border-border p-3">
@@ -208,6 +253,14 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
           </div>
           {event && (
             <p className="text-xs text-muted-foreground">Se mudar a data, os lembretes deste evento serão enviados novamente.</p>
+          )}
+          {needsApproval && (!event || event.status !== "approved") && (
+            <p className="text-xs rounded-md bg-muted p-3">
+              Este evento será enviado para <b>aprovação dos administradores</b> antes de entrar na agenda e nos lembretes.
+            </p>
+          )}
+          {needsApproval && event?.status === "approved" && (
+            <p className="text-xs text-muted-foreground">Mudar data, horário ou locais envia o evento para nova aprovação.</p>
           )}
         </div>
         <DialogFooter>
