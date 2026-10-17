@@ -38,6 +38,9 @@ import MinistriesPage from "@/pages/MinistriesPage";
 import LocationsPage from "@/pages/LocationsPage";
 import ApprovalsPage from "@/pages/ApprovalsPage";
 import PopsPage from "@/pages/PopsPage";
+import MediaPage from "@/pages/MediaPage";
+import AcksPage from "@/pages/AcksPage";
+import ConfirmAck from "@/pages/ConfirmAck";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -60,6 +63,7 @@ const App = () => (
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/primeiro-acesso" element={<FirstAccess />} />
+              <Route path="/confirmar" element={<ConfirmAck />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmed" element={<EmailConfirmed />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -82,6 +86,8 @@ const App = () => (
               <Route path="/admin/calendario" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/pops" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><PopsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/midia" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><MediaPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/confirmacoes" element={<AdminProtectedRoute><AdminLayout><AcksPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/aprovacoes" element={<AdminProtectedRoute><AdminLayout><ApprovalsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/ministerios" element={<AdminProtectedRoute><AdminLayout><MinistriesPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/usuarios" element={<AdminProtectedRoute><AdminLayout><UsersPage /></AdminLayout></AdminProtectedRoute>} />
