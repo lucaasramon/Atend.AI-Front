@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Bot,
   Activity,
   Settings,
   ChevronLeft,
@@ -50,7 +49,6 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
   { path: "/admin/usuarios", label: "Usuários", icon: UserCog },
   { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: "notifications" },
   { path: "/admin/audit", label: "Auditoria", icon: ScrollText },
-  { path: "/admin/automations", label: "Automações", icon: Bot },
   { path: "/admin/health", label: "Saúde & Logs", icon: Activity },
   { path: "/admin/settings", label: "Configurações", icon: Settings },
 ];
@@ -97,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           )}
         </div>
 
-        <nav className="flex-1 py-4 px-2 space-y-1">
+        <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-2 space-y-1">
           {visibleItems.map((item) => {
             const active = location.pathname === item.path ||
               (item.path !== "/admin" && location.pathname.startsWith(item.path));

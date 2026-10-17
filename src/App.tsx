@@ -12,7 +12,6 @@ import ClientLayout from "@/components/ClientLayout";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
 import ClientDetail from "@/pages/ClientDetail";
-import Automations from "@/pages/Automations";
 import Health from "@/pages/Health";
 import SettingsPage from "@/pages/SettingsPage";
 import AuditLogs from "@/pages/AuditLogs";
@@ -97,7 +96,6 @@ const App = () => (
               <Route path="/admin/usuarios" element={<AdminProtectedRoute><AdminLayout><UsersPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminLayout><AdminNotifications /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/audit" element={<AdminProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/automations" element={<AdminProtectedRoute><AdminLayout><Automations /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/health" element={<AdminProtectedRoute><AdminLayout><Health /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/settings" element={<AdminProtectedRoute><AdminLayout><SettingsPage /></AdminLayout></AdminProtectedRoute>} />
 
