@@ -13,6 +13,7 @@ import {
   Clock,
   Settings2,
   Lock,
+  Users,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -80,6 +82,11 @@ interface Group {
 
 type Settings = Record<string, string>;
 
+interface RobotGroup extends Group {
+  allowed: boolean;
+  is_default: boolean;
+}
+
 interface ReminderConfig {
   enabled: boolean;
   offsets: number[];
@@ -118,6 +125,11 @@ export default function Events() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState<Settings>({});
   const [running, setRunning] = useState(false);
+
+  const [groupsOpen, setGroupsOpen] = useState(false);
+  const [robotGroups, setRobotGroups] = useState<RobotGroup[] | null>(null);
+  const [allowedDraft, setAllowedDraft] = useState<string[]>([]);
+  const [savingGroups, setSavingGroups] = useState(false);
 
   const offsets = config.offsets;
   const groupName = (jid?: string | null) =>
@@ -257,6 +269,33 @@ export default function Events() {
     }
   };
 
+  const openGroups = async () => {
+    setGroupsOpen(true);
+    setRobotGroups(null);
+    try {
+      const list = await api.get<RobotGroup[]>("/api/events/groups");
+      setRobotGroups(list);
+      setAllowedDraft(list.filter((g) => g.allowed).map((g) => g.id));
+    } catch (error: any) {
+      toast({ title: "Erro ao listar grupos", description: error.message, variant: "destructive" });
+      setGroupsOpen(false);
+    }
+  };
+
+  const saveGroups = async () => {
+    setSavingGroups(true);
+    try {
+      await api.put("/api/events/allowed-groups", { groups: allowedDraft });
+      toast({ title: "Grupos atualizados" });
+      setGroupsOpen(false);
+      load();
+    } catch (error: any) {
+      toast({ title: "Não foi possível salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingGroups(false);
+    }
+  };
+
   const openSettings = () => {
     setSettingsForm({
       reminders_enabled: settings.reminders_enabled || "false",
@@ -350,6 +389,7 @@ export default function Events() {
         <div className="flex gap-2">
           {isAdmin && (
             <>
+              <Button variant="outline" onClick={openGroups}><Users className="w-4 h-4 mr-2" />Grupos</Button>
               <Button variant="outline" onClick={openSettings}><Settings2 className="w-4 h-4 mr-2" />Configurar</Button>
               <Button variant="outline" onClick={runNow} disabled={running}>
                 {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
@@ -544,6 +584,57 @@ export default function Events() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSettingsOpen(false)}>Cancelar</Button>
             <Button onClick={saveSettings}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grupos liberados */}
+      <Dialog open={groupsOpen} onOpenChange={setGroupsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Grupos que podem receber lembretes</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Estes são os grupos em que o robô está. Só os marcados aparecem para escolha nos eventos.
+          </p>
+          {!robotGroups ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+          ) : robotGroups.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">O robô ainda não está em nenhum grupo.</p>
+          ) : (
+            <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+              {robotGroups.map((g) => {
+                const checked = allowedDraft.includes(g.id);
+                return (
+                  <label
+                    key={g.id}
+                    className={`flex items-center gap-3 rounded-md border border-border px-3 py-2 ${g.is_default ? "opacity-80" : "cursor-pointer hover:border-primary/40"}`}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      disabled={g.is_default}
+                      onCheckedChange={(v) =>
+                        setAllowedDraft(v ? [...allowedDraft, g.id] : allowedDraft.filter((id) => id !== g.id))
+                      }
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{g.subject}</p>
+                      {g.size !== undefined && <p className="text-xs text-muted-foreground">{g.size} participantes</p>}
+                    </div>
+                    {g.is_default && <Badge variant="outline">Padrão</Badge>}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Para um grupo novo aparecer aqui, adicione o número do robô nele pelo WhatsApp.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGroupsOpen(false)}>Cancelar</Button>
+            <Button onClick={saveGroups} disabled={!robotGroups || savingGroups}>
+              {savingGroups && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
