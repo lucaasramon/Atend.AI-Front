@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Clock, Loader2, Lock, MapPin, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,6 +38,8 @@ const MAX_PER_DAY = 3;
 export default function CalendarPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canEdit = user?.role === "admin" || user?.role === "agenda";
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
@@ -239,12 +242,12 @@ export default function CalendarPage() {
                   </Badge>
                 )}
               </div>
-              <DialogFooter>
+              {canEdit && <DialogFooter>
                 <Button variant="outline" onClick={() => navigate("/admin/agenda")}>
                   <Pencil className="w-4 h-4 mr-2" />
                   Editar na Agenda
                 </Button>
-              </DialogFooter>
+              </DialogFooter>}
             </>
           )}
         </DialogContent>

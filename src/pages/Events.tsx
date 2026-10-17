@@ -109,6 +109,7 @@ export default function Events() {
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const canEdit = user?.role === "admin" || user?.role === "agenda";
   const [events, setEvents] = useState<EventItem[]>([]);
   const [config, setConfig] = useState<ReminderConfig>({ enabled: false, offsets: [], group_jid: "", groups: [] });
   const [settings, setSettings] = useState<Settings>({});
@@ -369,8 +370,12 @@ export default function Events() {
         </div>
         <div className="flex gap-1 shrink-0">
           <Button size="icon" variant="ghost" title="Prévia da mensagem" onClick={() => openPreview(ev)}><Eye className="w-4 h-4" /></Button>
-          <Button size="icon" variant="ghost" title="Editar" onClick={() => openEdit(ev)}><Pencil className="w-4 h-4" /></Button>
-          <Button size="icon" variant="ghost" title="Excluir" onClick={() => setToDelete(ev)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+          {canEdit && (
+            <>
+              <Button size="icon" variant="ghost" title="Editar" onClick={() => openEdit(ev)}><Pencil className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" title="Excluir" onClick={() => setToDelete(ev)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+            </>
+          )}
         </div>
       </div>
       <div className="flex flex-wrap gap-1.5">{reminderBadges(ev)}</div>
@@ -397,7 +402,7 @@ export default function Events() {
               </Button>
             </>
           )}
-          <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Novo evento</Button>
+          {canEdit && <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Novo evento</Button>}
         </div>
       </div>
 

@@ -17,6 +17,7 @@ import {
   LogOut,
   CalendarDays,
   CalendarRange,
+  UserCog,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ const navItems = [
   { path: "/admin/clients", label: "Clientes", icon: Users },
   { path: "/admin/agenda", label: "Agenda", icon: CalendarDays },
   { path: "/admin/calendario", label: "Calendário", icon: CalendarRange },
+  { path: "/admin/usuarios", label: "Usuários", icon: UserCog },
   { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: true },
   { path: "/admin/audit", label: "Auditoria", icon: ScrollText },
   { path: "/admin/automations", label: "Automações", icon: Bot },

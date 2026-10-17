@@ -19,7 +19,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, loading: authLoading, setUserFromToken } = useAuth();
 
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginEmail, setLoginEmail] = useState(searchParams.get("email") || "");
   const [loginPassword, setLoginPassword] = useState("");
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -32,6 +32,8 @@ export default function LoginPage() {
       navigate("/admin");
     } else if (role === "agenda") {
       navigate("/admin/agenda");
+    } else if (role === "viewer") {
+      navigate("/admin/calendario");
     } else {
       if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
         navigate(`/client/billing?auto_checkout=${selectedPlan}`);
@@ -44,7 +46,11 @@ export default function LoginPage() {
   // Já logado ao abrir a página: pula a tela de login
   useEffect(() => {
     if (!authLoading && user) {
-      const home = user.role === "admin" ? "/admin" : user.role === "agenda" ? "/admin/agenda" : "/client/dashboard";
+      const home =
+        user.role === "admin" ? "/admin"
+        : user.role === "agenda" ? "/admin/agenda"
+        : user.role === "viewer" ? "/admin/calendario"
+        : "/client/dashboard";
       navigate(home, { replace: true });
     }
   }, [authLoading]);
@@ -53,10 +59,21 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await api.post<{ token: string; user: { id: string; email: string; role: string } }>("/api/auth/login", {
+      const res = await api.post<{
+        token: string;
+        user: { id: string; email: string; role: string };
+        must_change_password?: boolean;
+        setup_token?: string;
+      }>("/api/auth/login", {
         email: loginEmail,
         password: loginPassword,
       });
+      // Entrou com a senha temporária: primeiro define a senha nova
+      if (res.must_change_password && res.setup_token) {
+        toast({ title: "Crie a sua senha", description: "Antes de entrar, defina uma senha nova." });
+        navigate(`/primeiro-acesso?token=${res.setup_token}`);
+        return;
+      }
       setUserFromToken(res.token, res.user);
       toast({ title: "Login realizado!", description: "Redirecionando..." });
       redirectAfterAuth(res.user.role);

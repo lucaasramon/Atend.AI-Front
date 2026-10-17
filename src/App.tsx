@@ -32,6 +32,8 @@ import ClientHelp from "@/pages/client/ClientHelp";
 import AdminNotifications from "@/pages/AdminNotifications";
 import Events from "@/pages/Events";
 import CalendarPage from "@/pages/CalendarPage";
+import UsersPage from "@/pages/UsersPage";
+import FirstAccess from "@/pages/FirstAccess";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -50,6 +52,7 @@ const App = () => (
               {/* <Route path="/" element={<LandingPage />} /> */}
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/primeiro-acesso" element={<FirstAccess />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmed" element={<EmailConfirmed />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -68,8 +71,9 @@ const App = () => (
               <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/agenda" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/calendario" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/agenda" element={<AdminProtectedRoute roles={["admin", "agenda", "viewer"]}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/calendario" element={<AdminProtectedRoute roles={["admin", "agenda", "viewer"]}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/usuarios" element={<AdminProtectedRoute><AdminLayout><UsersPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminLayout><AdminNotifications /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/audit" element={<AdminProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/automations" element={<AdminProtectedRoute><AdminLayout><Automations /></AdminLayout></AdminProtectedRoute>} />
