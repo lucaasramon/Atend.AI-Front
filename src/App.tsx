@@ -41,6 +41,8 @@ import PopsPage from "@/pages/PopsPage";
 import MediaPage from "@/pages/MediaPage";
 import AcksPage from "@/pages/AcksPage";
 import ConfirmAck from "@/pages/ConfirmAck";
+import RosterPage from "@/pages/RosterPage";
+import MemberChecklist from "@/pages/MemberChecklist";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -64,6 +66,7 @@ const App = () => (
               <Route path="/login" element={<LoginPage />} />
               <Route path="/primeiro-acesso" element={<FirstAccess />} />
               <Route path="/confirmar" element={<ConfirmAck />} />
+              <Route path="/checklist" element={<MemberChecklist />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmed" element={<EmailConfirmed />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -86,6 +89,7 @@ const App = () => (
               <Route path="/admin/calendario" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/pops" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><PopsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/escalas" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><RosterPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/midia" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><MediaPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/confirmacoes" element={<AdminProtectedRoute><AdminLayout><AcksPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/aprovacoes" element={<AdminProtectedRoute><AdminLayout><ApprovalsPage /></AdminLayout></AdminProtectedRoute>} />

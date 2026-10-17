@@ -24,6 +24,7 @@ import {
   ClipboardList,
   Clapperboard,
   Eye,
+  UsersRound,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
   { path: "/admin/calendario", label: "Calendário", icon: CalendarRange, team: true },
   { path: "/admin/locais", label: "Locais", icon: MapPin, team: true },
   { path: "/admin/pops", label: "POPs", icon: ClipboardList, team: true },
+  { path: "/admin/escalas", label: "Escalas", icon: UsersRound, team: true },
   { path: "/admin/midia", label: "Mídia", icon: Clapperboard, team: true },
   { path: "/admin/confirmacoes", label: "Confirmações", icon: Eye },
   { path: "/admin/aprovacoes", label: "Aprovações", icon: ClipboardCheck, badge: "approvals" },
