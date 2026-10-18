@@ -21,7 +21,6 @@ import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -54,6 +53,7 @@ import {
 
 import { EventItem, Group, ReminderConfig, STATUS_LABEL, canManageEvent, eventOffsets, locationLabel, parseOffsets, whenLabel } from "@/lib/events";
 import EventFormDialog from "@/components/events/EventFormDialog";
+import OffsetPicker from "@/components/events/OffsetPicker";
 import EventChecklistDialog from "@/components/events/EventChecklistDialog";
 import ImportEventsDialog from "@/components/events/ImportEventsDialog";
 import ChecklistTemplatesDialog from "@/components/events/ChecklistTemplatesDialog";
@@ -135,7 +135,7 @@ export default function Events() {
     const rows: { event: EventItem; offset: number; date: Date }[] = [];
     for (const ev of events) {
       const start = new Date(ev.starts_at);
-      if (start <= new Date() || ev.status !== "approved") continue;
+      if (start <= new Date() || ev.status !== "approved" || ev.reminders_off) continue;
       const done = new Set(ev.reminders.map((r) => r.offset_days));
       const pending = eventOffsets(ev, offsets).filter((off) => !done.has(off));
       // Antecedências já vencidas viram um único envio hoje (o backend pula as demais)
@@ -262,6 +262,9 @@ export default function Events() {
   };
 
   const reminderBadges = (ev: EventItem) => {
+    if (ev.reminders_off) {
+      return [<Badge key="off" variant="outline" className="text-muted-foreground">🔕 Sem lembretes</Badge>];
+    }
     const start = new Date(ev.starts_at);
     return eventOffsets(ev, offsets).map((off) => {
       const rec = ev.reminders.find((r) => r.offset_days === off);
@@ -481,14 +484,12 @@ export default function Events() {
               <p className="text-xs text-muted-foreground">Somente grupos liberados para o robô aparecem aqui.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="offsets">Antecedências (dias, separados por vírgula)</Label>
-              <Input
-                id="offsets"
-                value={settingsForm.reminders_offsets || ""}
-                onChange={(e) => setSettingsForm({ ...settingsForm, reminders_offsets: e.target.value })}
-                placeholder="30,21,14,10,7,3,1,0"
+              <Label>Lembrar com quantos dias de antecedência (padrão)</Label>
+              <OffsetPicker
+                value={parseOffsets(settingsForm.reminders_offsets)}
+                onChange={(d) => setSettingsForm({ ...settingsForm, reminders_offsets: d.join(",") })}
               />
-              <p className="text-xs text-muted-foreground">0 = no dia do evento. Cada evento pode ter as suas próprias.</p>
+              <p className="text-xs text-muted-foreground">Vale para todos os eventos. Cada evento pode escolher os seus dias ou não lembrar.</p>
             </div>
             <div className="space-y-2 rounded-md border border-border p-3">
               <p className="text-sm font-medium">Resumos automáticos no grupo padrão</p>

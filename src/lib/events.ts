@@ -16,6 +16,8 @@ export interface EventItem {
   is_public: boolean;
   group_jid: string | null;
   reminder_offsets: number[] | null;
+  /** true = o robô não lembra deste evento */
+  reminders_off: boolean;
   reminders: ReminderRecord[];
   status: EventStatus;
   rejection_reason: string | null;

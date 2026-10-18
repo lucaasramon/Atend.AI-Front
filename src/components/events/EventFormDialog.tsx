@@ -17,7 +17,8 @@ import {
 import { cap } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { CATEGORIES, Conflict, EventItem, Location, Ministry, ReminderConfig, parseOffsets, whenLabel } from "@/lib/events";
+import { CATEGORIES, Conflict, EventItem, Location, Ministry, ReminderConfig, whenLabel } from "@/lib/events";
+import OffsetPicker from "./OffsetPicker";
 import { useAuth } from "@/contexts/AuthContext";
 import ChipSelect from "./ChipSelect";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,9 @@ const emptyForm = {
   ends_at: "",
   is_public: true,
   group_jid: "",
-  custom_offsets: false,
-  offsets: "",
+  // Lembretes: padrão, dias escolhidos ou nenhum
+  reminder_mode: "default" as "default" | "custom" | "off",
+  offset_days: [] as number[],
   ministry_ids: [] as string[],
   location_ids: [] as string[],
   category: "",
@@ -115,15 +117,15 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             ends_at: toLocalInput(event.ends_at),
             is_public: event.is_public,
             group_jid: event.group_jid || "",
-            custom_offsets: !!event.reminder_offsets?.length,
-            offsets: (event.reminder_offsets || config.offsets).join(", "),
+            reminder_mode: event.reminders_off ? "off" : event.reminder_offsets?.length ? "custom" : "default",
+            offset_days: event.reminder_offsets?.length ? [...event.reminder_offsets] : [...config.offsets],
             ministry_ids: event.ministries.map((m) => m.id),
             location_ids: event.locations.map((l) => l.id),
             category: event.category || "",
           }
         : {
             ...emptyForm,
-            offsets: config.offsets.join(", "),
+            offset_days: [...config.offsets],
             // Com uma área só, já vem marcada
             ministry_ids: !isAdminUser && user?.ministry_ids?.length === 1 ? [...user.ministry_ids] : [],
           }
@@ -228,8 +230,7 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       toast({ title: "Escolha a área do evento", description: "Você só pode criar eventos das suas áreas.", variant: "destructive" });
       return;
     }
-    const offsets = parseOffsets(form.offsets);
-    if (form.custom_offsets && !offsets.length) {
+    if (form.reminder_mode === "custom" && !form.offset_days.length) {
       toast({ title: "Informe ao menos uma antecedência", variant: "destructive" });
       return;
     }
@@ -244,7 +245,8 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       ends_at: effEnd,
       is_public: form.is_public,
       group_jid: form.group_jid,
-      reminder_offsets: form.custom_offsets ? offsets : null,
+      reminder_offsets: form.reminder_mode === "custom" ? form.offset_days : null,
+      reminders_off: form.reminder_mode === "off",
       ministry_ids: form.ministry_ids,
       location_ids: form.location_ids,
     };
@@ -535,21 +537,41 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             </p>
           </div>
 
-          <div className="space-y-2 rounded-md border border-border p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Lembretes personalizados</p>
-                <p className="text-xs text-muted-foreground">
-                  {form.custom_offsets ? "Só para este evento" : `Padrão: ${config.offsets.map(whenLabel).join(", ")}`}
-                </p>
-              </div>
-              <Switch checked={form.custom_offsets} onCheckedChange={(v) => setForm({ ...form, custom_offsets: v })} />
+          <div className="space-y-3 rounded-md border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">Lembretes no WhatsApp</p>
+              <p className="text-xs text-muted-foreground">Com quantos dias de antecedência o robô avisa nos grupos</p>
             </div>
-            {form.custom_offsets && (
-              <div className="space-y-1">
-                <Input value={form.offsets} onChange={(e) => setForm({ ...form, offsets: e.target.value })} placeholder="30, 7, 1, 0" />
-                <p className="text-xs text-muted-foreground">Dias antes, separados por vírgula (0 = no dia).</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+              {([
+                ["default", "Padrão"],
+                ["custom", "Escolher os dias"],
+                ["off", "Não lembrar"],
+              ] as const).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setForm({ ...form, reminder_mode: mode })}
+                  className={`rounded-md border px-3 py-2 text-sm transition-colors ${
+                    form.reminder_mode === mode ? "border-primary bg-primary/10 text-primary font-medium" : "border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {form.reminder_mode === "default" && (
+              <p className="text-xs text-muted-foreground">
+                Usa o padrão da agenda: {config.offsets.map(whenLabel).join(", ") || "nenhum"}.
+              </p>
+            )}
+            {form.reminder_mode === "custom" && (
+              <OffsetPicker value={form.offset_days} onChange={(d) => setForm({ ...form, offset_days: d })} />
+            )}
+            {form.reminder_mode === "off" && (
+              <p className="text-xs text-muted-foreground">
+                O robô não manda lembretes deste evento{repeating ? " (em nenhuma das datas)" : ""}. Ele continua no calendário e nos resumos do mês e da semana.
+              </p>
             )}
           </div>
 
