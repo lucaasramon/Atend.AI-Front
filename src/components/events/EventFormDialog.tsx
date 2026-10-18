@@ -1,6 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { ptBR } from "date-fns/locale";
+import { AlertTriangle, Loader2, Repeat } from "lucide-react";
+import {
+  MAX_OCCURRENCES,
+  NTH_LABEL,
+  RepeatFreq,
+  RepeatSpec,
+  WEEKDAYS_LONG,
+  WEEKDAYS_SHORT,
+  describeRepeat,
+  occurrenceAt,
+  repeatDates,
+  weekdayOf,
+} from "@/lib/recurrence";
+import { cap } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES, Conflict, EventItem, Location, Ministry, ReminderConfig, parseOffsets, whenLabel } from "@/lib/events";
@@ -38,18 +52,32 @@ const emptyForm = {
   ministry_ids: [] as string[],
   location_ids: [] as string[],
   category: "",
-  repeat: "none",
-  repeat_until: "",
+  // Repetição (só no cadastro): quando ativa, as datas vêm destes parâmetros
+  repeat: "none" as "none" | RepeatFreq,
+  rep_start_date: "",
+  rep_until: "",
+  rep_start_time: "19:00",
+  rep_end_time: "",
+  rep_interval: 1,
+  rep_weekdays: [] as number[],
+  rep_month_day: 1,
+  rep_nth: 1,
+  rep_weekday: 0,
 };
 
-// Opções de repetição (só no cadastro)
-const REPEATS: { value: string; label: string; freq?: string; interval?: number }[] = [
+const REPEATS: { value: "none" | RepeatFreq; label: string }[] = [
   { value: "none", label: "Não se repete" },
-  { value: "weekly", label: "Toda semana", freq: "weekly", interval: 1 },
-  { value: "biweekly", label: "A cada 2 semanas", freq: "weekly", interval: 2 },
-  { value: "monthly_day", label: "Todo mês, no mesmo dia", freq: "monthly_day" },
-  { value: "monthly_nth", label: "Todo mês, na mesma semana (ex.: toda 1ª sexta)", freq: "monthly_nth" },
+  { value: "weekly", label: "Semanal (escolher os dias da semana)" },
+  { value: "monthly_day", label: "Mensal, no mesmo dia (ex.: todo dia 10)" },
+  { value: "monthly_nth", label: "Mensal, por semana (ex.: toda 1ª sexta)" },
 ];
+
+const today = () => format(new Date(), "yyyy-MM-dd");
+const plusMonths = (day: string, n: number) => {
+  const d = new Date(`${day}T12:00:00`);
+  d.setMonth(d.getMonth() + n);
+  return format(d, "yyyy-MM-dd");
+};
 
 export default function EventFormDialog({ open, onOpenChange, event, config, onSaved }: Props) {
   const { toast } = useToast();
@@ -79,6 +107,7 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
     setForm(
       event
         ? {
+            ...emptyForm,
             title: event.title,
             description: event.description || "",
             location: event.location || "",
@@ -91,8 +120,6 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             ministry_ids: event.ministries.map((m) => m.id),
             location_ids: event.locations.map((l) => l.id),
             category: event.category || "",
-            repeat: "none",
-            repeat_until: "",
           }
         : {
             ...emptyForm,
@@ -103,31 +130,99 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
     );
   }, [open, event]);
 
+  // ---------- Repetição ----------
+  const repeating = !event && form.repeat !== "none";
+  const spec: RepeatSpec | null = repeating
+    ? {
+        freq: form.repeat as RepeatFreq,
+        start_date: form.rep_start_date,
+        until: form.rep_until,
+        start_time: form.rep_start_time,
+        end_time: form.rep_end_time || null,
+        interval: form.rep_interval,
+        weekdays: form.rep_weekdays,
+        month_day: form.rep_month_day,
+        nth: form.rep_nth,
+        weekday: form.rep_weekday,
+      }
+    : null;
+  const repDates = useMemo(() => (spec ? repeatDates(spec) : []), [JSON.stringify(spec)]);
+  const firstOccurrence = spec && repDates.length ? occurrenceAt(repDates[0], spec.start_time, spec.end_time) : null;
+
+  /** Ao escolher um tipo de repetição, preenche os parâmetros a partir da data já digitada (ou de hoje) */
+  const chooseRepeat = (value: "none" | RepeatFreq) => {
+    if (value === "none") return setForm({ ...form, repeat: "none" });
+    const base = form.starts_at || `${today()}T${form.rep_start_time}`;
+    const day = base.slice(0, 10);
+    const dayNum = Number(day.slice(8, 10));
+    setForm({
+      ...form,
+      repeat: value,
+      rep_start_date: form.rep_start_date || day,
+      rep_until: form.rep_until || plusMonths(day, 3),
+      rep_start_time: base.slice(11, 16) || form.rep_start_time,
+      rep_end_time: form.rep_end_time || (form.ends_at ? form.ends_at.slice(11, 16) : ""),
+      rep_weekdays: form.rep_weekdays.length ? form.rep_weekdays : [weekdayOf(day)],
+      rep_month_day: dayNum,
+      rep_nth: dayNum > 28 ? 5 : Math.ceil(dayNum / 7),
+      rep_weekday: weekdayOf(day),
+    });
+  };
+
+  const toggleWeekday = (d: number) =>
+    setForm({
+      ...form,
+      rep_weekdays: form.rep_weekdays.includes(d) ? form.rep_weekdays.filter((x) => x !== d) : [...form.rep_weekdays, d],
+    });
+
+  // Início/término efetivos (na repetição, a 1ª data gerada)
+  const effStart = firstOccurrence ? firstOccurrence.starts_at : form.starts_at ? new Date(form.starts_at).toISOString() : "";
+  const effEnd = firstOccurrence ? firstOccurrence.ends_at : form.ends_at ? new Date(form.ends_at).toISOString() : null;
+
   // Confere conflitos de horário/local enquanto o formulário é preenchido
   useEffect(() => {
-    if (!open || !form.starts_at) {
+    if (!open || !effStart) {
       setConflicts([]);
       return;
     }
     const t = setTimeout(() => {
-      const qs = new URLSearchParams({ starts_at: new Date(form.starts_at).toISOString(), location: form.location });
-      if (form.ends_at) qs.set("ends_at", new Date(form.ends_at).toISOString());
+      const qs = new URLSearchParams({ starts_at: effStart, location: form.location });
+      if (effEnd) qs.set("ends_at", effEnd);
       if (event) qs.set("exclude_id", event.id);
       if (form.location_ids.length) qs.set("location_ids", form.location_ids.join(","));
       if (form.ministry_ids.length) qs.set("ministry_ids", form.ministry_ids.join(","));
       api.get<Conflict[]>(`/api/events/conflicts?${qs}`).then(setConflicts).catch(() => setConflicts([]));
     }, 500);
     return () => clearTimeout(t);
-  }, [open, form.starts_at, form.ends_at, form.location, form.location_ids, form.ministry_ids]);
+  }, [open, effStart, effEnd, form.location, form.location_ids, form.ministry_ids]);
 
   const handleSave = async () => {
-    if (!form.title.trim() || !form.starts_at) {
-      toast({ title: "Preencha título, data e hora", variant: "destructive" });
+    if (!form.title.trim()) {
+      toast({ title: "Preencha o título", variant: "destructive" });
       return;
     }
-    if (form.ends_at && new Date(form.ends_at) <= new Date(form.starts_at)) {
-      toast({ title: "O término deve ser depois do início", variant: "destructive" });
-      return;
+    if (repeating) {
+      if (!form.rep_start_date || !form.rep_until || !form.rep_start_time) {
+        toast({ title: "Preencha a primeira data, até quando e o horário", variant: "destructive" });
+        return;
+      }
+      if (form.repeat === "weekly" && !form.rep_weekdays.length) {
+        toast({ title: "Escolha pelo menos um dia da semana", variant: "destructive" });
+        return;
+      }
+      if (!repDates.length) {
+        toast({ title: "Nenhuma data nesse período", description: "Confira a primeira data, a data final e os dias escolhidos.", variant: "destructive" });
+        return;
+      }
+    } else {
+      if (!form.starts_at) {
+        toast({ title: "Preencha a data e a hora de início", variant: "destructive" });
+        return;
+      }
+      if (form.ends_at && new Date(form.ends_at) <= new Date(form.starts_at)) {
+        toast({ title: "O término deve ser depois do início", variant: "destructive" });
+        return;
+      }
     }
     if (!isAdminUser && !form.ministry_ids.some((id) => user?.ministry_ids?.includes(id))) {
       toast({ title: "Escolha a área do evento", description: "Você só pode criar eventos das suas áreas.", variant: "destructive" });
@@ -138,20 +233,15 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       toast({ title: "Informe ao menos uma antecedência", variant: "destructive" });
       return;
     }
-    const rep = REPEATS.find((r) => r.value === form.repeat);
-    if (!event && rep?.freq && !form.repeat_until) {
-      toast({ title: "Informe até quando o evento se repete", variant: "destructive" });
-      return;
-    }
     setSaving(true);
     const body = {
       category: form.category || null,
-      ...(!event && rep?.freq ? { repeat: { freq: rep.freq, interval: rep.interval, until: form.repeat_until } } : {}),
+      ...(spec ? { repeat: spec } : {}),
       title: form.title.trim(),
       description: form.description.trim(),
       location: form.location.trim(),
-      starts_at: new Date(form.starts_at).toISOString(),
-      ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
+      starts_at: effStart,
+      ends_at: effEnd,
       is_public: form.is_public,
       group_jid: form.group_jid,
       reminder_offsets: form.custom_offsets ? offsets : null,
@@ -205,33 +295,165 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="starts_at">Início *</Label>
-              <Input id="starts_at" type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ends_at">Término</Label>
-              <Input id="ends_at" type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} />
-            </div>
-          </div>
           {!event && (
+            <div className="space-y-2">
+              <Label>Repetição</Label>
+              <Select value={form.repeat} onValueChange={(v) => chooseRepeat(v as "none" | RepeatFreq)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {REPEATS.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {!repeating ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Repetir</Label>
-                <Select value={form.repeat} onValueChange={(v) => setForm({ ...form, repeat: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {REPEATS.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="starts_at">Início *</Label>
+                <Input id="starts_at" type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
               </div>
-              {form.repeat !== "none" && (
+              <div className="space-y-2">
+                <Label htmlFor="ends_at">Término</Label>
+                <Input id="ends_at" type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-4">
+              <p className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Repeat className="w-4 h-4" />
+                Como o evento se repete
+              </p>
+
+              {form.repeat === "weekly" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Dias da semana *</Label>
+                    <div className="grid grid-cols-7 gap-1">
+                      {WEEKDAYS_SHORT.map((d, i) => {
+                        const on = form.rep_weekdays.includes(i);
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => toggleWeekday(i)}
+                            title={WEEKDAYS_LONG[i]}
+                            className={`h-9 rounded-md border text-xs font-medium transition-colors ${
+                              on ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            {d}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Frequência</Label>
+                    <Select value={String(form.rep_interval)} onValueChange={(v) => setForm({ ...form, rep_interval: Number(v) })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Toda semana</SelectItem>
+                        <SelectItem value="2">A cada 2 semanas (quinzenal)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+
+              {form.repeat === "monthly_day" && (
                 <div className="space-y-2">
-                  <Label htmlFor="repeat_until">Até</Label>
-                  <Input id="repeat_until" type="date" value={form.repeat_until} onChange={(e) => setForm({ ...form, repeat_until: e.target.value })} />
+                  <Label>Dia do mês *</Label>
+                  <Select value={String(form.rep_month_day)} onValueChange={(v) => setForm({ ...form, rep_month_day: Number(v) })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <SelectItem key={d} value={String(d)}>Todo dia {d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.rep_month_day > 28 && (
+                    <p className="text-xs text-muted-foreground">Nos meses que não têm o dia {form.rep_month_day}, usa o último dia do mês.</p>
+                  )}
+                </div>
+              )}
+
+              {form.repeat === "monthly_nth" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Semana do mês *</Label>
+                    <Select value={String(form.rep_nth)} onValueChange={(v) => setForm({ ...form, rep_nth: Number(v) })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <SelectItem key={n} value={String(n)}>{NTH_LABEL[n]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Dia da semana *</Label>
+                    <Select value={String(form.rep_weekday)} onValueChange={(v) => setForm({ ...form, rep_weekday: Number(v) })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {WEEKDAYS_LONG.map((d, i) => (
+                          <SelectItem key={d} value={String(i)}>{cap(d)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="rep_start_time">Horário de início *</Label>
+                  <Input id="rep_start_time" type="time" value={form.rep_start_time} onChange={(e) => setForm({ ...form, rep_start_time: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rep_end_time">Horário de término</Label>
+                  <Input id="rep_end_time" type="time" value={form.rep_end_time} onChange={(e) => setForm({ ...form, rep_end_time: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="rep_start_date">A partir de *</Label>
+                  <Input id="rep_start_date" type="date" value={form.rep_start_date} onChange={(e) => setForm({ ...form, rep_start_date: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rep_until">Até *</Label>
+                  <Input id="rep_until" type="date" min={form.rep_start_date} value={form.rep_until} onChange={(e) => setForm({ ...form, rep_until: e.target.value })} />
+                </div>
+              </div>
+
+              {/* Prévia das datas */}
+              {spec && (
+                <div className="rounded-md bg-background/60 p-2.5 space-y-1.5">
+                  <p className="text-xs font-medium">{describeRepeat(spec)}</p>
+                  {repDates.length ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        Serão criadas <b className="text-foreground">{repDates.length}</b> datas
+                        {repDates.length >= MAX_OCCURRENCES && ` (limite de ${MAX_OCCURRENCES})`}:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {repDates.slice(0, 8).map((d) => (
+                          <span key={d} className="rounded border border-border px-1.5 py-0.5 text-[11px]">
+                            {format(new Date(`${d}T12:00:00`), "EEE dd/MM", { locale: ptBR })}
+                          </span>
+                        ))}
+                        {repDates.length > 8 && (
+                          <span className="text-[11px] text-muted-foreground px-1">
+                            … até {format(new Date(`${repDates[repDates.length - 1]}T12:00:00`), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-destructive">Nenhuma data nesse período. Confira as datas e os dias escolhidos.</p>
+                  )}
                 </div>
               )}
             </div>
