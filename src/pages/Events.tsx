@@ -185,13 +185,12 @@ export default function Events() {
   const runNow = async () => {
     setRunning(true);
     try {
-      const r = await api.post<{ sent: number; skipped: number; errors: string[] }>("/api/events/reminders/run", {});
+      await api.post("/api/events/reminders/run", {});
       toast({
-        title: r.sent ? `${r.sent} lembrete(s) enviado(s) ao grupo` : "Nenhum lembrete pendente para hoje",
-        description: r.errors.length ? r.errors.join("\n") : undefined,
-        variant: r.errors.length ? "destructive" : "default",
+        title: "Rodada iniciada",
+        description: "Os lembretes no prazo estão sendo enviados aos poucos, com pausa entre as mensagens. Atualize a página em alguns minutos para ver o resultado.",
       });
-      load();
+      setTimeout(load, 60_000);
     } catch (error: any) {
       toast({ title: "Erro ao rodar lembretes", description: error.message, variant: "destructive" });
     } finally {
