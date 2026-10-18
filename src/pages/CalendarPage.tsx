@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, EventItem, STATUS_LABEL, canManageEvent, categoryOf, eventColor, locationLabel } from "@/lib/events";
+import EventRosterPanel from "@/components/events/EventRosterPanel";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MAX_PER_DAY = 3;
@@ -366,6 +367,7 @@ export default function CalendarPage() {
                     Não aparece no calendário público
                   </Badge>
                 )}
+                <EventRosterPanel eventId={selected.id} canEdit={user?.role === "admin" || user?.role === "agenda"} />
               </div>
               {canManageEvent(user, selected) && (
                 <DialogFooter>

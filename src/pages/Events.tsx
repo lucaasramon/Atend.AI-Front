@@ -16,6 +16,7 @@ import {
   Users,
   ListChecks,
   FileUp,
+  UsersRound,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +54,8 @@ import {
 
 import { EventItem, Group, ReminderConfig, STATUS_LABEL, canManageEvent, eventOffsets, locationLabel, parseOffsets, whenLabel } from "@/lib/events";
 import EventFormDialog from "@/components/events/EventFormDialog";
+import { cap } from "@/lib/utils";
+import EventRosterPanel from "@/components/events/EventRosterPanel";
 import OffsetPicker from "@/components/events/OffsetPicker";
 import EventChecklistDialog from "@/components/events/EventChecklistDialog";
 import ImportEventsDialog from "@/components/events/ImportEventsDialog";
@@ -88,6 +91,7 @@ export default function Events() {
   const [toDelete, setToDelete] = useState<EventItem | null>(null);
   const [confirmRun, setConfirmRun] = useState(false);
   const [checklistEvent, setChecklistEvent] = useState<EventItem | null>(null);
+  const [rosterEvent, setRosterEvent] = useState<EventItem | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [preview, setPreview] = useState<{ event: EventItem; items: Preview[] } | null>(null);
@@ -338,6 +342,10 @@ export default function Events() {
           >
             <ListChecks className="w-4 h-4" />
             {ev.tasks_total > 0 && <span className="ml-1 text-xs">{ev.tasks_done}/{ev.tasks_total}</span>}
+          </Button>
+          <Button size="sm" variant="ghost" title="Escala do evento" onClick={() => setRosterEvent(ev)}>
+            <UsersRound className="w-4 h-4" />
+            {ev.roster_count > 0 && <span className="ml-1 text-xs">{ev.roster_count}</span>}
           </Button>
           <Button size="icon" variant="ghost" title="Prévia da mensagem" onClick={() => openPreview(ev)}><Eye className="w-4 h-4" /></Button>
           {canManageEvent(user, ev) && (
@@ -591,6 +599,23 @@ export default function Events() {
               {savingGroups && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Salvar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Escala do evento */}
+      <Dialog open={!!rosterEvent} onOpenChange={(o) => !o && setRosterEvent(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{rosterEvent?.title}</DialogTitle>
+          </DialogHeader>
+          {rosterEvent && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {cap(format(new Date(rosterEvent.starts_at), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR }))}
+              </p>
+              <EventRosterPanel eventId={rosterEvent.id} canEdit={canEdit} />
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

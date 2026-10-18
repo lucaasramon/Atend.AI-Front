@@ -30,6 +30,36 @@ export interface EventItem {
   created_by: string | null;
   tasks_total: number;
   tasks_done: number;
+  roster_count: number;
+}
+
+/** Uma pessoa escalada num evento */
+export interface RosterEntry {
+  id: string;
+  event_id: string;
+  ministry_id: string;
+  ministry: string;
+  ministry_color: string | null;
+  area_id: string | null;
+  area: string | null;
+  task: string | null;
+  member_id: string;
+  member: string;
+  has_whatsapp: boolean;
+  checked: number[];
+  steps_count: number;
+  sent_at: string | null;
+}
+
+/** Agrupa a escala por área: [{ ministry, color, entries }] */
+export function groupRoster(entries: RosterEntry[]) {
+  const map = new Map<string, { ministry_id: string; ministry: string; color: string | null; entries: RosterEntry[] }>();
+  for (const e of entries) {
+    const g = map.get(e.ministry_id) || { ministry_id: e.ministry_id, ministry: e.ministry, color: e.ministry_color, entries: [] };
+    g.entries.push(e);
+    map.set(e.ministry_id, g);
+  }
+  return Array.from(map.values()).sort((a, b) => a.ministry.localeCompare(b.ministry, "pt-BR"));
 }
 
 export interface EventTask {
