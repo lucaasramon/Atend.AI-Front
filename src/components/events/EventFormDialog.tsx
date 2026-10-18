@@ -60,6 +60,9 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
   const [locations, setLocations] = useState<Location[]>([]);
   const { user } = useAuth();
   const needsApproval = config.approval_required && user?.role !== "admin";
+  // Quem não é admin só escolhe entre as suas áreas
+  const isAdminUser = user?.role === "admin";
+  const myMinistries = isAdminUser ? ministries : ministries.filter((m) => user?.ministry_ids?.includes(m.id));
 
   useEffect(() => {
     if (!open) return;
@@ -91,7 +94,12 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             repeat: "none",
             repeat_until: "",
           }
-        : { ...emptyForm, offsets: config.offsets.join(", ") }
+        : {
+            ...emptyForm,
+            offsets: config.offsets.join(", "),
+            // Com uma área só, já vem marcada
+            ministry_ids: !isAdminUser && user?.ministry_ids?.length === 1 ? [...user.ministry_ids] : [],
+          }
     );
   }, [open, event]);
 
@@ -119,6 +127,10 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
     }
     if (form.ends_at && new Date(form.ends_at) <= new Date(form.starts_at)) {
       toast({ title: "O término deve ser depois do início", variant: "destructive" });
+      return;
+    }
+    if (!isAdminUser && !form.ministry_ids.some((id) => user?.ministry_ids?.includes(id))) {
+      toast({ title: "Escolha a área do evento", description: "Você só pode criar eventos das suas áreas.", variant: "destructive" });
       return;
     }
     const offsets = parseOffsets(form.offsets);
@@ -243,14 +255,25 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             />
           </div>
           <div className="space-y-2">
-            <Label>Ministérios envolvidos</Label>
+            <Label>{isAdminUser ? "Áreas / ministérios envolvidos" : "Área do evento *"}</Label>
             <ChipSelect
-              options={ministries}
+              options={myMinistries}
               value={form.ministry_ids}
               onChange={(ids) => setForm({ ...form, ministry_ids: ids })}
-              empty="Nenhum ministério cadastrado (o admin cadastra em Ministérios)"
+              empty={
+                isAdminUser
+                  ? "Nenhum ministério cadastrado (cadastre em Ministérios)"
+                  : "Seu usuário ainda não tem área. Peça a um administrador para incluir em Usuários."
+              }
             />
-            <p className="text-xs text-muted-foreground">Os grupos desses ministérios também recebem os lembretes.</p>
+            {!isAdminUser && event && event.ministries.some((m) => !user?.ministry_ids?.includes(m.id)) && (
+              <p className="text-xs text-muted-foreground">
+                Também neste evento (de outras áreas): {event.ministries.filter((m) => !user?.ministry_ids?.includes(m.id)).map((m) => m.name).join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {isAdminUser ? "" : "Você só pode criar eventos das suas áreas. "}Os grupos dessas áreas também recebem os lembretes.
+            </p>
           </div>
 
           {conflicts.length > 0 && (

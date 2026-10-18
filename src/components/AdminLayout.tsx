@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Users,
   Activity,
   Settings,
   ChevronLeft,
@@ -36,8 +35,9 @@ type BadgeKey = "notifications" | "approvals";
 
 // team: também aparece para os perfis "agenda" e "viewer"
 const navItems: { path: string; label: string; icon: typeof LayoutDashboard; badge?: BadgeKey; team?: boolean }[] = [
-  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/admin/clients", label: "Clientes", icon: Users },
+  // Ocultos por enquanto (atendimento por IA):
+  // { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  // { path: "/admin/clients", label: "Clientes", icon: Users },
   { path: "/admin/agenda", label: "Agenda", icon: CalendarDays, team: true },
   { path: "/admin/calendario", label: "Calendário", icon: CalendarRange, team: true },
   { path: "/admin/locais", label: "Locais", icon: MapPin, team: true },

@@ -28,7 +28,7 @@ const HELP: Record<string, PageHelp> = {
       "Central dos eventos da igreja. Tudo o que é cadastrado aqui entra no calendário e o robô D.Sync avisa nos grupos do WhatsApp antes de cada evento.",
     who: ALL,
     actions: [
-      "Criar, editar e excluir eventos (inclusive eventos que se repetem)",
+      "Criar, editar e excluir eventos das suas áreas (todos veem os eventos de todas as áreas)",
       "Montar o checklist de cada evento (buffet, som, decoração...) com responsáveis e prazos",
       "Importar o calendário do ano por planilha",
       "Ver a prévia das mensagens e os próximos lembretes",
@@ -95,6 +95,8 @@ const HELP: Record<string, PageHelp> = {
     who: ADMIN,
     actions: [
       "Perfis: Administrador (tudo), Agenda (edita eventos) e Visualizador (só vê)",
+      "Função na igreja (Pastor(a), Líder, Voluntário(a)...) e áreas da pessoa",
+      "Quem tem perfil Agenda só cria e edita eventos das suas áreas",
       "Reenviar o acesso quando o link expirar",
       "Editar e excluir usuários",
     ],

@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   const redirectAfterAuth = (role: string) => {
     if (role === "admin") {
-      navigate("/admin");
+      navigate("/admin/agenda");
     } else if (role === "agenda") {
       navigate("/admin/agenda");
     } else if (role === "viewer") {
@@ -47,7 +47,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       const home =
-        user.role === "admin" ? "/admin"
+        user.role === "admin" ? "/admin/agenda"
         : user.role === "agenda" ? "/admin/agenda"
         : user.role === "viewer" ? "/admin/calendario"
         : "/client/dashboard";

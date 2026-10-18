@@ -5,6 +5,10 @@ export interface AuthUser {
   id: string;
   email: string;
   role: string;
+  full_name?: string | null;
+  church_role?: string | null;
+  /** Áreas (ministérios) do usuário: só cria/edita eventos delas */
+  ministry_ids?: string[];
 }
 
 interface AuthContextType {
@@ -51,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setUserFromToken = (token: string, u: AuthUser) => {
     localStorage.setItem("auth_token", token);
     setUser(u);
+    // O login não traz áreas/função: completa com /me
+    api.get<AuthUser>("/api/auth/me").then(setUser).catch(() => {});
   };
 
   return (

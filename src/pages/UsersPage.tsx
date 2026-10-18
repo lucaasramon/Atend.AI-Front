@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ChipSelect from "@/components/events/ChipSelect";
 
 interface TeamUser {
   id: string;
@@ -28,7 +29,16 @@ interface TeamUser {
   role: "admin" | "agenda" | "viewer";
   must_change_password: boolean;
   created_at: string;
+  church_role: string | null;
+  ministries: { id: string; name: string; color: string | null }[];
 }
+
+// Funções na igreja (mesma lista do backend)
+const CHURCH_ROLES = [
+  "Apóstolo(a)", "Bispo(a)", "Pastor(a)", "Pastor(a) auxiliar", "Presbítero(a)", "Evangelista", "Missionário(a)",
+  "Diácono(isa)", "Obreiro(a)", "Líder", "Vice-líder", "Coordenador(a)", "Professor(a)", "Secretário(a)",
+  "Tesoureiro(a)", "Voluntário(a)", "Membro",
+];
 
 interface AccessResult {
   whatsapp_sent: boolean;
@@ -53,7 +63,7 @@ const formatPhone = (n: string | null) => {
   return n;
 };
 
-const emptyForm = { full_name: "", email: "", whatsapp: "", role: "agenda" };
+const emptyForm = { full_name: "", email: "", whatsapp: "", role: "agenda", church_role: "", ministry_ids: [] as string[] };
 
 export default function UsersPage() {
   const { toast } = useToast();
@@ -69,6 +79,11 @@ export default function UsersPage() {
   const [toDelete, setToDelete] = useState<TeamUser | null>(null);
   const [toResend, setToResend] = useState<TeamUser | null>(null);
   const [manual, setManual] = useState<{ user: string; password: string; error?: string } | null>(null);
+
+  const [ministries, setMinistries] = useState<{ id: string; name: string; color: string | null }[]>([]);
+  useEffect(() => {
+    api.get<{ id: string; name: string; color: string | null }[]>("/api/ministries").then(setMinistries).catch(() => {});
+  }, []);
 
   const load = () =>
     api.get<TeamUser[]>("/api/users")
@@ -97,7 +112,7 @@ export default function UsersPage() {
 
   const openEdit = (u: TeamUser) => {
     setEditing(u);
-    setForm({ full_name: u.full_name || "", email: u.email, whatsapp: u.whatsapp || "", role: u.role });
+    setForm({ full_name: u.full_name || "", email: u.email, whatsapp: u.whatsapp || "", role: u.role, church_role: u.church_role || "", ministry_ids: u.ministries.map((m) => m.id) });
     setFormOpen(true);
   };
 
@@ -109,7 +124,7 @@ export default function UsersPage() {
     setSaving(true);
     try {
       if (editing) {
-        await api.patch(`/api/users/${editing.id}`, { full_name: form.full_name, whatsapp: form.whatsapp, role: form.role });
+        await api.patch(`/api/users/${editing.id}`, { full_name: form.full_name, whatsapp: form.whatsapp, role: form.role, church_role: form.church_role, ministry_ids: form.ministry_ids });
         toast({ title: "Usuário atualizado" });
       } else {
         const res = await api.post<TeamUser & AccessResult>("/api/users", form);
@@ -184,8 +199,21 @@ export default function UsersPage() {
                     {u.must_change_password && <Badge variant="outline" className="text-warning border-warning/40">Aguardando primeiro acesso</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {u.email} · WhatsApp {formatPhone(u.whatsapp)}
+                    {u.church_role ? `${u.church_role} · ` : ""}{u.email} · WhatsApp {formatPhone(u.whatsapp)}
                   </p>
+                  {u.ministries.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {u.ministries.map((m) => (
+                        <span key={m.id} className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px]">
+                          {m.color && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: m.color }} />}
+                          {m.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {u.role === "agenda" && u.ministries.length === 0 && (
+                    <p className="text-[11px] text-warning mt-1">Sem área: não consegue criar eventos</p>
+                  )}
                 </div>
                 <Badge variant={u.role === "admin" ? "default" : "secondary"} className="w-fit">{roleLabel(u.role)}</Badge>
                 <div className="flex gap-1">
@@ -249,6 +277,34 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{ROLES.find((r) => r.value === form.role)?.hint}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Função na igreja</Label>
+              <Select value={form.church_role || "none"} onValueChange={(v) => setForm({ ...form, church_role: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não informada</SelectItem>
+                  {CHURCH_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Áreas {form.role === "agenda" && "*"}</Label>
+              <ChipSelect
+                options={ministries}
+                value={form.ministry_ids}
+                onChange={(ids) => setForm({ ...form, ministry_ids: ids })}
+                empty="Nenhuma área cadastrada (cadastre em Ministérios)"
+              />
+              <p className="text-xs text-muted-foreground">
+                {form.role === "admin"
+                  ? "O administrador pode criar eventos de qualquer área."
+                  : form.role === "agenda"
+                    ? "A pessoa só poderá criar e editar eventos dessas áreas. Ver, ela vê todos."
+                    : "Informativo: o visualizador não cria eventos."}
+              </p>
             </div>
             {!editing && (
               <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">

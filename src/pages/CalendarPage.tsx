@@ -25,7 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CATEGORIES, EventItem, STATUS_LABEL, categoryOf, eventColor, locationLabel } from "@/lib/events";
+import { CATEGORIES, EventItem, STATUS_LABEL, canManageEvent, categoryOf, eventColor, locationLabel } from "@/lib/events";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MAX_PER_DAY = 3;
@@ -42,7 +42,6 @@ export default function CalendarPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canEdit = user?.role === "admin" || user?.role === "agenda";
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"month" | "year">("month");
@@ -368,7 +367,7 @@ export default function CalendarPage() {
                   </Badge>
                 )}
               </div>
-              {canEdit && (
+              {canManageEvent(user, selected) && (
                 <DialogFooter>
                   <Button variant="outline" onClick={() => navigate("/admin/agenda")}>
                     <Pencil className="w-4 h-4 mr-2" />

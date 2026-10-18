@@ -52,7 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { EventItem, Group, ReminderConfig, STATUS_LABEL, eventOffsets, locationLabel, parseOffsets, whenLabel } from "@/lib/events";
+import { EventItem, Group, ReminderConfig, STATUS_LABEL, canManageEvent, eventOffsets, locationLabel, parseOffsets, whenLabel } from "@/lib/events";
 import EventFormDialog from "@/components/events/EventFormDialog";
 import EventChecklistDialog from "@/components/events/EventChecklistDialog";
 import ImportEventsDialog from "@/components/events/ImportEventsDialog";
@@ -86,6 +86,7 @@ export default function Events() {
   const [summaryPreview, setSummaryPreview] = useState<{ title: string; text: string | null } | null>(null);
 
   const [toDelete, setToDelete] = useState<EventItem | null>(null);
+  const [confirmRun, setConfirmRun] = useState(false);
   const [checklistEvent, setChecklistEvent] = useState<EventItem | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -337,7 +338,7 @@ export default function Events() {
             {ev.tasks_total > 0 && <span className="ml-1 text-xs">{ev.tasks_done}/{ev.tasks_total}</span>}
           </Button>
           <Button size="icon" variant="ghost" title="Prévia da mensagem" onClick={() => openPreview(ev)}><Eye className="w-4 h-4" /></Button>
-          {canEdit && (
+          {canManageEvent(user, ev) && (
             <>
               <Button size="icon" variant="ghost" title="Editar" onClick={() => openEdit(ev)}><Pencil className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" title="Excluir" onClick={() => setToDelete(ev)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
@@ -367,7 +368,7 @@ export default function Events() {
               <Button variant="outline" onClick={() => setTemplatesOpen(true)}><ListChecks className="w-4 h-4 mr-2" />Modelos</Button>
               <Button variant="outline" onClick={openGroups}><Users className="w-4 h-4 mr-2" />Grupos</Button>
               <Button variant="outline" onClick={openSettings}><Settings2 className="w-4 h-4 mr-2" />Configurar</Button>
-              <Button variant="outline" onClick={runNow} disabled={running}>
+              <Button variant="outline" onClick={() => setConfirmRun(true)} disabled={running}>
                 {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                 Rodar agora
               </Button>
@@ -453,7 +454,7 @@ export default function Events() {
 
       {/* Configuração */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Configurar lembretes</DialogTitle>
           </DialogHeader>
@@ -595,12 +596,29 @@ export default function Events() {
 
       <EventChecklistDialog
         event={checklistEvent}
-        canEdit={canEdit}
+        canEdit={!!checklistEvent && canManageEvent(user, checklistEvent)}
         onOpenChange={(o) => !o && setChecklistEvent(null)}
         onChanged={load}
       />
       <ImportEventsDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} />
       <ChecklistTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
+
+      {/* Confirmar "Rodar agora" */}
+      <AlertDialog open={confirmRun} onOpenChange={setConfirmRun}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rodar os lembretes agora?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O robô vai verificar a agenda neste momento e <b>enviar nos grupos do WhatsApp</b> os lembretes que já
+              estiverem no prazo. Os que já foram enviados não se repetem. Normalmente isso acontece sozinho todo dia às 08:00.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmRun(false); runNow(); }}>Sim, rodar agora</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Excluir */}
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>

@@ -9,9 +9,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import AdminLayout from "@/components/AdminLayout";
 import ClientLayout from "@/components/ClientLayout";
-import Dashboard from "@/pages/Dashboard";
-import Clients from "@/pages/Clients";
-import ClientDetail from "@/pages/ClientDetail";
+// import Dashboard from "@/pages/Dashboard"; // oculto
+// import Clients from "@/pages/Clients"; // oculto
+// import ClientDetail from "@/pages/ClientDetail"; // oculto
 import Health from "@/pages/Health";
 import SettingsPage from "@/pages/SettingsPage";
 import AuditLogs from "@/pages/AuditLogs";
@@ -81,9 +81,12 @@ const App = () => (
               <Route path="/client/help" element={<ProtectedRoute><ClientLayout><ClientHelp /></ClientLayout></ProtectedRoute>} />
 
               {/* Admin Area - Protected */}
-              <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} />
-              <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} />
+              {/* Dashboard e Clientes ocultos por enquanto: levam para a Agenda */}
+              {/* <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} /> */}
+              {/* <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} /> */}
+              {/* <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} /> */}
+              <Route path="/admin" element={<Navigate to="/admin/agenda" replace />} />
+              <Route path="/admin/clients/*" element={<Navigate to="/admin/agenda" replace />} />
               <Route path="/admin/agenda" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/calendario" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />

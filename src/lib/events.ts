@@ -25,6 +25,7 @@ export interface EventItem {
   locations: EventLocation[];
   category: string | null;
   series_id: string | null;
+  created_by: string | null;
   tasks_total: number;
   tasks_done: number;
 }
@@ -125,6 +126,20 @@ export const parseOffsets = (v?: string | null) =>
         .filter((n) => Number.isFinite(n) && n >= 0 && n <= 366)
     )
   ).sort((a, b) => b - a);
+
+/**
+ * O usuário pode editar/excluir o evento?
+ * Admin pode tudo; Agenda só eventos das suas áreas (ou que criou); Visualizador nunca.
+ */
+export function canManageEvent(
+  user: { id: string; role: string; ministry_ids?: string[] } | null | undefined,
+  ev: { created_by?: string | null; ministries: EventMinistry[] }
+): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (user.role !== "agenda") return false;
+  return ev.created_by === user.id || ev.ministries.some((m) => user.ministry_ids?.includes(m.id));
+}
 
 /** Antecedências do evento: as próprias ou o padrão */
 export const eventOffsets = (ev: Pick<EventItem, "reminder_offsets">, defaults: number[]) =>
