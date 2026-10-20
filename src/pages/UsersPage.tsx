@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pencil, Plus, Send, Trash2, UserCog } from "lucide-react";
+import { Copy, KeyRound, Link2, Loader2, MessageCircle, Pencil, Plus, Send, Trash2, UserCog } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +44,18 @@ interface AccessResult {
   whatsapp_sent: boolean;
   whatsapp_error?: string;
   temp_password?: string;
+  /** Entrega por link: texto pronto para o admin enviar do próprio WhatsApp */
+  access_link?: string;
+  access_message?: string;
 }
+
+/** Link (padrão, não usa o robô) ou mensagem enviada pelo robô */
+type Delivery = "link" | "whatsapp";
+
+const DELIVERY_OPTIONS: { value: Delivery; title: string; hint: string }[] = [
+  { value: "link", title: "Gerar link para eu enviar", hint: "Você copia a mensagem e manda do seu WhatsApp. O robô não envia nada." },
+  { value: "whatsapp", title: "Enviar pelo robô D.Sync", hint: "O robô manda a mensagem no WhatsApp da pessoa." },
+];
 
 const ROLES = [
   { value: "admin", label: "Administrador", hint: "Acesso total, inclusive cadastro de usuários" },
@@ -79,6 +90,8 @@ export default function UsersPage() {
   const [toDelete, setToDelete] = useState<TeamUser | null>(null);
   const [toResend, setToResend] = useState<TeamUser | null>(null);
   const [manual, setManual] = useState<{ user: string; password: string; error?: string } | null>(null);
+  const [delivery, setDelivery] = useState<Delivery>("link");
+  const [linkResult, setLinkResult] = useState<{ user: string; whatsapp: string | null; message: string; link: string } | null>(null);
 
   const [ministries, setMinistries] = useState<{ id: string; name: string; color: string | null }[]>([]);
   useEffect(() => {
@@ -95,9 +108,11 @@ export default function UsersPage() {
     load();
   }, []);
 
-  // Se o WhatsApp falhar, mostra a senha para o admin repassar
-  const handleAccess = (name: string, r: AccessResult, okTitle: string) => {
-    if (r.whatsapp_sent) {
+  // Link: mostra a mensagem para copiar. Robô: confirma, ou mostra a senha se o envio falhar
+  const handleAccess = (name: string, whatsapp: string | null, r: AccessResult, okTitle: string) => {
+    if (r.access_message && r.access_link) {
+      setLinkResult({ user: name, whatsapp, message: r.access_message, link: r.access_link });
+    } else if (r.whatsapp_sent) {
       toast({ title: okTitle, description: "Login, senha temporária e link enviados pelo WhatsApp." });
     } else {
       setManual({ user: name, password: r.temp_password || "", error: r.whatsapp_error });
@@ -107,6 +122,7 @@ export default function UsersPage() {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    setDelivery("link");
     setFormOpen(true);
   };
 
@@ -127,8 +143,8 @@ export default function UsersPage() {
         await api.patch(`/api/users/${editing.id}`, { full_name: form.full_name, whatsapp: form.whatsapp, role: form.role, church_role: form.church_role, ministry_ids: form.ministry_ids });
         toast({ title: "Usuário atualizado" });
       } else {
-        const res = await api.post<TeamUser & AccessResult>("/api/users", form);
-        handleAccess(res.full_name || res.email, res, "Usuário cadastrado");
+        const res = await api.post<TeamUser & AccessResult>("/api/users", { ...form, delivery });
+        handleAccess(res.full_name || res.email, res.whatsapp, res, "Usuário cadastrado");
       }
       setFormOpen(false);
       load();
@@ -139,15 +155,24 @@ export default function UsersPage() {
     }
   };
 
-  const handleResend = async () => {
+  const handleResend = async (how: Delivery) => {
     if (!toResend) return;
     try {
-      const res = await api.post<AccessResult>(`/api/users/${toResend.id}/resend`, {});
-      handleAccess(toResend.full_name || toResend.email, res, "Acesso reenviado");
+      const res = await api.post<AccessResult>(`/api/users/${toResend.id}/resend`, { delivery: how });
+      handleAccess(toResend.full_name || toResend.email, toResend.whatsapp, res, "Acesso reenviado");
       setToResend(null);
       load();
     } catch (error: any) {
       toast({ title: "Erro ao reenviar", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const copy = async (text: string, ok: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: ok });
+    } catch {
+      toast({ title: "Não foi possível copiar", variant: "destructive" });
     }
   };
 
@@ -218,8 +243,8 @@ export default function UsersPage() {
                 <Badge variant={u.role === "admin" ? "default" : "secondary"} className="w-fit">{roleLabel(u.role)}</Badge>
                 <div className="flex gap-1">
                   {!isMe && u.whatsapp && (
-                    <Button size="icon" variant="ghost" title="Reenviar acesso pelo WhatsApp" onClick={() => setToResend(u)}>
-                      <Send className="w-4 h-4" />
+                    <Button size="icon" variant="ghost" title="Gerar novo acesso (link ou robô)" onClick={() => setToResend(u)}>
+                      <KeyRound className="w-4 h-4" />
                     </Button>
                   )}
                   <Button size="icon" variant="ghost" title="Editar" onClick={() => openEdit(u)}><Pencil className="w-4 h-4" /></Button>
@@ -237,7 +262,7 @@ export default function UsersPage() {
 
       {/* Cadastro / edição */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar usuário" : "Novo usuário"}</DialogTitle>
           </DialogHeader>
@@ -307,16 +332,35 @@ export default function UsersPage() {
               </p>
             </div>
             {!editing && (
-              <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
-                Ao salvar, a pessoa recebe no WhatsApp o link de acesso, o login e uma senha temporária.
-              </p>
+              <div className="space-y-2">
+                <Label>Como entregar o acesso?</Label>
+                <div className="grid gap-2">
+                  {DELIVERY_OPTIONS.map((o) => (
+                    <button
+                      type="button"
+                      key={o.value}
+                      onClick={() => setDelivery(o.value)}
+                      className={`text-left rounded-lg border p-3 transition-colors ${
+                        delivery === o.value ? "border-primary bg-primary/10" : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        {o.value === "link" ? <Link2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        {o.title}
+                        {o.value === "link" && <Badge variant="secondary" className="text-[10px]">Padrão</Badge>}
+                      </span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">{o.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editing ? "Salvar" : "Cadastrar e enviar acesso"}
+              {editing ? "Salvar" : delivery === "link" ? "Cadastrar e gerar link" : "Cadastrar e enviar pelo robô"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -342,22 +386,50 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Reenviar */}
+      {/* Novo acesso: link (padrão) ou robô */}
       <AlertDialog open={!!toResend} onOpenChange={(o) => !o && setToResend(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reenviar acesso?</AlertDialogTitle>
+            <AlertDialogTitle>Gerar novo acesso?</AlertDialogTitle>
             <AlertDialogDescription>
-              {toResend?.full_name || toResend?.email} vai receber no WhatsApp uma nova senha temporária e um novo link.
-              A senha atual deixa de funcionar.
+              {toResend?.full_name || toResend?.email} recebe uma nova senha temporária e um novo link. A senha atual deixa de funcionar.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-2">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResend}>Reenviar</AlertDialogAction>
+            <Button variant="outline" onClick={() => handleResend("whatsapp")}><Send className="w-4 h-4 mr-2" />Enviar pelo robô</Button>
+            <AlertDialogAction onClick={() => handleResend("link")}><Link2 className="w-4 h-4 mr-2" />Gerar link</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Link gerado: mensagem pronta para o admin enviar */}
+      <Dialog open={!!linkResult} onOpenChange={(o) => !o && setLinkResult(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Acesso de {linkResult?.user} pronto</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Mande esta mensagem para a pessoa pelo seu WhatsApp. O link vale por 7 dias.</p>
+          <pre className="whitespace-pre-wrap [overflow-wrap:anywhere] font-sans text-sm rounded-md bg-muted p-3 max-h-64 overflow-y-auto">{linkResult?.message}</pre>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button className="flex-1" asChild>
+              <a
+                href={`https://wa.me/${linkResult?.whatsapp || ""}?text=${encodeURIComponent(linkResult?.message || "")}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />Abrir no meu WhatsApp
+              </a>
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={() => copy(linkResult?.message || "", "Mensagem copiada")}>
+              <Copy className="w-4 h-4 mr-2" />Copiar mensagem
+            </Button>
+          </div>
+          <button className="text-xs text-primary hover:underline self-start" onClick={() => copy(linkResult?.link || "", "Link copiado")}>
+            Copiar só o link
+          </button>
+        </DialogContent>
+      </Dialog>
 
       {/* Excluir */}
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
