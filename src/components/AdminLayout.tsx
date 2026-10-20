@@ -63,6 +63,8 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
   { path: "/admin/settings", label: "Configurações", icon: Settings },
 ];
 
+const ROLE_LABEL: Record<string, string> = { admin: "Administrador", agenda: "Agenda", viewer: "Visualizador" };
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -96,6 +98,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ]);
     setCounts({ notifications: n.count || 0, approvals: a.count || 0, people: p.count || 0 });
   };
+
+  // Cartão da pessoa logada no rodapé do menu
+  const displayName = user?.full_name || user?.email || "";
+  const initials = displayName.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+  const subtitle = user?.church_role || ROLE_LABEL[user?.role || ""] || "";
+  const avatarClass = "w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shrink-0";
+  const iconBtn = "p-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0";
 
   /** Menu (usado na barra lateral do computador e na gaveta do celular) */
   const nav = (compact: boolean) => (
@@ -134,24 +143,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         })}
       </nav>
 
-      <div className="p-2 border-t border-sidebar-border space-y-1 shrink-0">
-        <InstallAppButton compact={compact} />
-        <button
-          onClick={toggleTheme}
-          className="flex items-center justify-center w-full py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-        >
-          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          {!compact && <span className="ml-3 text-sm">{theme === "dark" ? "Modo claro" : "Modo escuro"}</span>}
-        </button>
-        <button
-          onClick={signOut}
-          title="Sair"
-          className="flex items-center justify-center w-full py-2 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          {!compact && <span className="ml-3 text-sm">Sair</span>}
-        </button>
+      {/* Rodapé: instalar o app + cartão da pessoa logada (tema e sair) */}
+      <div className="p-2 border-t border-sidebar-border space-y-2 shrink-0">
+        <InstallAppButton
+          compact={compact}
+          className={`flex items-center w-full rounded-md text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors ${
+            compact ? "justify-center py-2.5" : "px-3 py-2.5"
+          }`}
+        />
+        {compact ? (
+          <div className="flex flex-col items-center gap-1">
+            <span className={avatarClass} title={`${displayName} · ${subtitle}`}>{initials}</span>
+            <button onClick={toggleTheme} className={iconBtn} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button onClick={signOut} className={`${iconBtn} hover:text-destructive`} title="Sair">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5">
+            <span className={avatarClass}>{initials}</span>
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+            </div>
+            <button onClick={toggleTheme} className={iconBtn} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button onClick={signOut} className={`${iconBtn} hover:text-destructive`} title="Sair">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -165,12 +189,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }`}
       >
         {nav(collapsed)}
+        {/* Recolher/expandir: botão redondo na borda do menu */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center mx-2 mb-2 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          className="absolute -right-3 top-[18px] w-6 h-6 rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm flex items-center justify-center hover:text-primary hover:border-primary/40 transition-colors"
           title={collapsed ? "Expandir menu" : "Recolher menu"}
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
         </button>
       </aside>
 
