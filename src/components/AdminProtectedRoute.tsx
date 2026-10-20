@@ -20,7 +20,7 @@ export default function AdminProtectedRoute({
 
   if (!user) return <Navigate to="/login" replace />;
   if (!roles.includes(user.role)) {
-    const home = user.role === "agenda" ? "/admin/agenda" : user.role === "viewer" ? "/admin/calendario" : "/";
+    const home = user.role === "agenda" || user.role === "viewer" ? "/admin/inicio" : "/";
     return <Navigate to={home} replace />;
   }
 

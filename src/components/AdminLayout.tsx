@@ -26,6 +26,7 @@ import {
   ClipboardPen,
   UserPlus,
   BookOpen,
+  House,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,7 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
   // Ocultos por enquanto (atendimento por IA):
   // { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   // { path: "/admin/clients", label: "Clientes", icon: Users },
+  { path: "/admin/inicio", label: "Início", icon: House, team: true },
   { path: "/admin/agenda", label: "Agenda", icon: CalendarDays, team: true },
   { path: "/admin/calendario", label: "Calendário", icon: CalendarRange, team: true },
   { path: "/admin/locais", label: "Locais", icon: MapPin, team: true },

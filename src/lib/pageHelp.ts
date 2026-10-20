@@ -23,6 +23,17 @@ const HELP: Record<string, PageHelp> = {
     purpose: "Detalhes de um cliente do atendimento por IA: dados, plano, instância do WhatsApp e configurações do robô.",
     who: ADMIN,
   },
+  "/admin/inicio": {
+    purpose: "Seu resumo: o que está pendente para você, sua próxima escala, os eventos da sua área e o que está acontecendo na igreja.",
+    who: ALL,
+    actions: [
+      "Marcar como feitas as tarefas de checklist de evento que são suas e confirmar ciência",
+      "Ver a próxima escala e marcar o checklist da sua função",
+      "Ver aniversariantes da semana e inscrições abertas (copiar ou enviar o link)",
+      "Pedir oração ou solicitar visita (só os pastores veem)",
+      "Pastores e administradores: números da igreja, visitantes para procurar e pedidos de oração/visita",
+    ],
+  },
   "/admin/agenda": {
     purpose:
       "Central dos eventos da igreja. Tudo o que é cadastrado aqui entra no calendário e o robô D.Sync avisa nos grupos do WhatsApp antes de cada evento.",

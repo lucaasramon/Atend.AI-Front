@@ -47,6 +47,7 @@ import EventSignupPage from "@/pages/EventSignupPage";
 import PeoplePage from "@/pages/PeoplePage";
 import FormsPage from "@/pages/FormsPage";
 import SermonsPage from "@/pages/SermonsPage";
+import HomePage from "@/pages/HomePage";
 import SermonEditorPage from "@/pages/SermonEditorPage";
 import PulpitPage from "@/pages/PulpitPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
@@ -94,7 +95,8 @@ const App = () => (
               {/* <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><Dashboard /></AdminLayout></AdminProtectedRoute>} /> */}
               {/* <Route path="/admin/clients" element={<AdminProtectedRoute><AdminLayout><Clients /></AdminLayout></AdminProtectedRoute>} /> */}
               {/* <Route path="/admin/clients/:id" element={<AdminProtectedRoute><AdminLayout><ClientDetail /></AdminLayout></AdminProtectedRoute>} /> */}
-              <Route path="/admin" element={<Navigate to="/admin/agenda" replace />} />
+              <Route path="/admin" element={<Navigate to="/admin/inicio" replace />} />
+              <Route path="/admin/inicio" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><HomePage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/clients/*" element={<Navigate to="/admin/agenda" replace />} />
               <Route path="/admin/agenda" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><Events /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/calendario" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><CalendarPage /></AdminLayout></AdminProtectedRoute>} />

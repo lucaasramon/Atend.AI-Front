@@ -34,8 +34,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   if (!user) return <Navigate to="/login" replace />;
 
   // Usuários da agenda não têm área de cliente
-  if (user.role === "agenda") return <Navigate to="/admin/agenda" replace />;
-  if (user.role === "viewer") return <Navigate to="/admin/calendario" replace />;
+  if (user.role === "agenda") return <Navigate to="/admin/inicio" replace />;
+  if (user.role === "viewer") return <Navigate to="/admin/inicio" replace />;
 
   const isBillingPage = location.pathname === "/client/billing";
   const isOnboardingPage = location.pathname === "/client/onboarding";

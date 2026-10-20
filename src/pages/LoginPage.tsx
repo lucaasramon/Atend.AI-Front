@@ -29,12 +29,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const redirectAfterAuth = (role: string) => {
-    if (role === "admin") {
-      navigate("/admin/agenda");
-    } else if (role === "agenda") {
-      navigate("/admin/agenda");
-    } else if (role === "viewer") {
-      navigate("/admin/calendario");
+    if (role === "admin" || role === "agenda" || role === "viewer") {
+      navigate("/admin/inicio");
     } else {
       if (selectedPlan && STRIPE_PLANS[selectedPlan]) {
         navigate(`/client/billing?auto_checkout=${selectedPlan}`);
@@ -48,10 +44,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       const home =
-        user.role === "admin" ? "/admin/agenda"
-        : user.role === "agenda" ? "/admin/agenda"
-        : user.role === "viewer" ? "/admin/calendario"
-        : "/client/dashboard";
+        ["admin", "agenda", "viewer"].includes(user.role) ? "/admin/inicio" : "/client/dashboard";
       navigate(home, { replace: true });
     }
   }, [authLoading]);
