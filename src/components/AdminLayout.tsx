@@ -25,6 +25,7 @@ import {
   UsersRound,
   ClipboardPen,
   UserPlus,
+  BookOpen,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
   { path: "/admin/pops", label: "POPs", icon: ClipboardList, team: true },
   { path: "/admin/escalas", label: "Escalas", icon: UsersRound, team: true },
   { path: "/admin/midia", label: "Mídia", icon: Clapperboard, team: true },
+  { path: "/admin/pregacoes", label: "Pregações", icon: BookOpen, team: true },
   { path: "/admin/inscricoes", label: "Inscrições", icon: ClipboardPen, editors: true },
   { path: "/admin/cadastros", label: "Cadastros", icon: UserPlus, badge: "people" },
   { path: "/admin/confirmacoes", label: "Confirmações", icon: Eye },

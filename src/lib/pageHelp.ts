@@ -63,6 +63,18 @@ const HELP: Record<string, PageHelp> = {
       "A escala também aparece ao abrir o evento na Agenda e no Calendário",
     ],
   },
+  "/admin/pregacoes": {
+    purpose:
+      "Esboço das pregações em blocos (introdução, pontos, ilustração, apelo) com versículos e tempo de cada parte, e o painel do púlpito para pregar pelo celular ou tablet.",
+    who: "Cada pastor vê e edita as suas pregações. O líder da Mídia vê as de todos (só leitura) para preparar a projeção.",
+    actions: [
+      "Criar a pregação e ligar ao culto da Agenda",
+      "Em cada bloco: texto principal, versículos (cole o texto), anotações e minutos planejados",
+      "Púlpito: tela sempre acesa, letras grandes, toque nas laterais para passar de bloco, relógio do bloco e total",
+      "Funciona sem internet: abra a pregação uma vez com internet antes do culto",
+      "Histórico: quando e quanto tempo levou cada pregação",
+    ],
+  },
   "/admin/inscricoes": {
     purpose:
       "Formulários de inscrição dos eventos (retiro, curso, conferência). Cada formulário tem um link e um QR code; quem se inscreve aparece na lista na hora.",

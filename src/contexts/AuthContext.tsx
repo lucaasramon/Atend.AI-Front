@@ -27,6 +27,24 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// Último usuário carregado: sem internet, o app continua logado (ex.: painel do púlpito)
+const CACHE_KEY = "auth_user";
+const remember = (u: AuthUser | null) => {
+  try {
+    if (u) localStorage.setItem(CACHE_KEY, JSON.stringify(u));
+    else localStorage.removeItem(CACHE_KEY);
+  } catch {
+    /* sem espaço no aparelho: só não guarda */
+  }
+};
+const cachedUser = (): AuthUser | null => {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+  } catch {
+    return null;
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,9 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     api.get<AuthUser>("/api/auth/me")
-      .then((u) => setUser(u))
-      .catch(() => {
+      .then((u) => {
+        setUser(u);
+        remember(u);
+      })
+      .catch((err: { status?: number }) => {
+        // Sem internet (ou servidor fora): mantém a sessão com o último usuário conhecido
+        if (!err.status || err.status >= 500) {
+          const cached = cachedUser();
+          if (cached) return setUser(cached);
+        }
         localStorage.removeItem("auth_token");
+        remember(null);
         setUser(null);
       })
       .finally(() => setLoading(false));
@@ -48,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = () => {
     localStorage.removeItem("auth_token");
+    remember(null);
     setUser(null);
     window.location.href = "/login";
   };
@@ -56,7 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("auth_token", token);
     setUser(u);
     // O login não traz áreas/função: completa com /me
-    api.get<AuthUser>("/api/auth/me").then(setUser).catch(() => {});
+    remember(u);
+    api.get<AuthUser>("/api/auth/me").then((full) => {
+      setUser(full);
+      remember(full);
+    }).catch(() => {});
   };
 
   return (

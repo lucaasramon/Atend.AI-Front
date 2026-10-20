@@ -46,6 +46,9 @@ import SignupPage from "@/pages/SignupPage";
 import EventSignupPage from "@/pages/EventSignupPage";
 import PeoplePage from "@/pages/PeoplePage";
 import FormsPage from "@/pages/FormsPage";
+import SermonsPage from "@/pages/SermonsPage";
+import SermonEditorPage from "@/pages/SermonEditorPage";
+import PulpitPage from "@/pages/PulpitPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -98,6 +101,9 @@ const App = () => (
               <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/pops" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><PopsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/escalas" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><RosterPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/pregacoes" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><SermonsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/pregacoes/:id" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><SermonEditorPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/pulpito/:id" element={<AdminProtectedRoute roles={TEAM}><PulpitPage /></AdminProtectedRoute>} />
               <Route path="/admin/inscricoes" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><FormsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/cadastros" element={<AdminProtectedRoute><AdminLayout><PeoplePage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/midia" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><MediaPage /></AdminLayout></AdminProtectedRoute>} />
