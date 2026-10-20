@@ -111,12 +111,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
-            <span className="text-xl font-bold">D.Sync</span>
+          <Link to="/" className="inline-flex flex-col items-center gap-2 text-primary-foreground">
+            <img src="/logo.png" alt="Logo" className="w-20 h-20 rounded-2xl object-contain shadow-lg ring-4 ring-white/40" />
+            <span className="text-2xl font-bold tracking-tight">D.Sync</span>
           </Link>
         </div>
 
@@ -184,7 +184,7 @@ export default function LoginPage() {
           </Tabs>
         </Card>
 
-        <InstallAppButton className="flex items-center justify-center gap-0 w-full py-2.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors" />
+        <InstallAppButton className="flex items-center justify-center gap-0 w-full py-2.5 rounded-md bg-primary-foreground text-[hsl(var(--primary))] hover:opacity-90 font-medium transition-opacity" />
       </div>
     </div>
   );

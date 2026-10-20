@@ -51,11 +51,11 @@ export default function FirstAccess() {
   const firstName = info?.full_name?.split(" ")[0];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-primary">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <KeyRound className="w-6 h-6 text-primary" />
+          <div className="mx-auto w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+            <KeyRound className="w-6 h-6 text-primary-foreground" />
           </div>
           <h1 className="text-xl font-semibold">{firstName ? `Olá, ${firstName}!` : "Defina sua senha"}</h1>
           {info && <p className="text-sm text-muted-foreground">Crie a senha que você vai usar para entrar com <b>{info.email}</b>.</p>}

@@ -54,7 +54,7 @@ export default function MemberChecklist() {
   const confirmed = !!info && info.steps.length === 0 && info.checked.includes(0);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-primary">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">

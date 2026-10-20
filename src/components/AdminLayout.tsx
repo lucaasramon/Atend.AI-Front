@@ -6,7 +6,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Shield,
   Bell,
   ScrollText,
   Sun,
@@ -109,9 +108,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   /** Menu (usado na barra lateral do computador e na gaveta do celular) */
   const nav = (compact: boolean) => (
     <>
-      <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border shrink-0">
-        <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-md object-contain" />
-        {!compact && <span className="font-semibold text-foreground tracking-tight text-sm">D.Sync</span>}
+      <div className={`flex items-center gap-2 h-14 bg-primary shrink-0 ${compact ? "justify-center px-2" : "px-4"}`}>
+        <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-md object-contain" />
+        {!compact && <span className="font-bold text-primary-foreground tracking-tight">D.Sync</span>}
       </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-2 space-y-1">
@@ -124,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               title={compact ? item.label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors relative ${
                 active
-                  ? "bg-sidebar-accent text-primary shadow-glow"
+                  ? "bg-primary text-primary-foreground font-medium shadow-sm"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               }`}
             >
@@ -208,11 +207,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </Sheet>
 
       <main className={`flex-1 min-w-0 transition-all duration-300 ${collapsed ? "md:ml-16" : "md:ml-60"}`}>
-        <header className="sticky top-0 z-20 h-14 flex items-center justify-between gap-3 px-4 md:px-6 border-b border-border bg-background/80 backdrop-blur-xl">
+        {/* Barra do topo na cor da marca */}
+        <header className="sticky top-0 z-20 h-14 flex items-center justify-between gap-3 px-4 md:px-6 bg-primary text-primary-foreground shadow-sm">
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => setMobileOpen(true)}
-              className="md:hidden -ml-1 p-2 rounded-md hover:bg-muted relative"
+              className="md:hidden -ml-1 p-2 rounded-md hover:bg-black/10 relative"
               aria-label="Abrir menu"
             >
               <Menu className="w-5 h-5" />
@@ -220,15 +220,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
               )}
             </button>
-            <span className="md:hidden font-medium text-sm truncate">{current?.label}</span>
-            <span className="hidden md:flex items-center gap-2">
-              <Shield className="w-4 h-4 text-success" />
-              <span className="text-xs text-muted-foreground font-mono">Sistema Operacional</span>
-            </span>
+            {current && <current.icon className="hidden md:block w-4 h-4 shrink-0" />}
+            <span className="font-semibold truncate">{current?.label}</span>
           </div>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
-            <span className="text-xs text-muted-foreground truncate max-w-[140px] sm:max-w-none">{isAdmin ? "Admin" : user?.email}</span>
+            <span className="text-xs font-medium truncate max-w-[140px] sm:max-w-none opacity-80">{displayName}</span>
           </div>
         </header>
         <div className="p-4 md:p-6">

@@ -176,11 +176,11 @@ export default function EventSignupPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background py-6 px-4">
+    <div className="min-h-screen py-6 px-4 bg-[linear-gradient(to_bottom,hsl(var(--primary))_0,hsl(var(--primary))_200px,hsl(var(--background))_200px)]">
       <Card className="w-full max-w-lg mx-auto">
         <CardHeader className="pb-2 items-center">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Ticket className="w-6 h-6 text-primary" />
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+            <Ticket className="w-6 h-6 text-primary-foreground" />
           </div>
         </CardHeader>
         <CardContent>{children}</CardContent>

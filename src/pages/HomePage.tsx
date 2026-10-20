@@ -106,14 +106,15 @@ export default function HomePage() {
   return (
     <div className="space-y-6">
       {/* Saudação + pedidos */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+      <div className="rounded-xl bg-primary text-primary-foreground p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end justify-between gap-4 shadow-sm">
         <div>
-          <h1 className="text-2xl font-semibold">{greeting}, {first}!</h1>
-          <p className="text-sm text-muted-foreground">{cap(format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR }))}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">{greeting}, {first}!</h1>
+          <p className="text-sm opacity-80">{cap(format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR }))}</p>
+          {pending > 0 && <p className="text-sm font-medium mt-2">Você tem {pending} pendência{pending > 1 ? "s" : ""} hoje.</p>}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setAsk("prayer")}><HandHeart className="w-4 h-4 mr-2" />Pedir oração</Button>
-          <Button variant="outline" onClick={() => setAsk("visit")}><HomeIcon className="w-4 h-4 mr-2" />Solicitar visita</Button>
+          <Button className="bg-primary-foreground text-[hsl(var(--primary))] hover:bg-primary-foreground/90" onClick={() => setAsk("prayer")}><HandHeart className="w-4 h-4 mr-2" />Pedir oração</Button>
+          <Button className="bg-white/90 text-primary-foreground hover:bg-white" onClick={() => setAsk("visit")}><HomeIcon className="w-4 h-4 mr-2" />Solicitar visita</Button>
         </div>
       </div>
 
@@ -276,8 +277,8 @@ function Section({ icon: Icon, title, count, action, children }: { icon: typeof 
   return (
     <Card>
       <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Icon className="w-4 h-4 text-primary" />{title}
+        <CardTitle className="text-base flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0"><Icon className="w-4 h-4" /></span>{title}
           {!!count && <Badge variant="secondary" className="text-[11px]">{count}</Badge>}
         </CardTitle>
         {action}
