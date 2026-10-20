@@ -44,7 +44,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center gap-6">
             <Link to="/client/dashboard" className="flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
-              <span className="font-semibold text-sm">AtendIA</span>
+              <span className="font-semibold text-sm">D.Sync</span>
             </Link>
             <div className="hidden lg:flex items-center gap-1">
               {navItems.map((item) => {

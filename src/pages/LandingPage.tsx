@@ -128,7 +128,7 @@ export default function LandingPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
-            <span className="text-xl font-bold tracking-tight">AtendIA</span>
+            <span className="text-xl font-bold tracking-tight">D.Sync</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
@@ -307,9 +307,9 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-7 h-7 rounded-md object-contain" />
-              <span className="font-semibold">AtendIA</span>
+              <span className="font-semibold">D.Sync</span>
             </div>
-            <p className="text-sm text-muted-foreground">© 2026 AtendIA. Todos os direitos reservados.</p>
+            <p className="text-sm text-muted-foreground">© 2026 D.Sync. Todos os direitos reservados.</p>
             <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Painel Admin
             </Link>

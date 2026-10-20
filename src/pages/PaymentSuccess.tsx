@@ -22,7 +22,7 @@ export default function PaymentSuccess() {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
             <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
-            <span className="text-xl font-bold">AtendIA</span>
+            <span className="text-xl font-bold">D.Sync</span>
           </Link>
         </div>
 

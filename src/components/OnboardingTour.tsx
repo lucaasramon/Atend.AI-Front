@@ -11,7 +11,7 @@ interface TourStep {
 }
 
 const STEPS: TourStep[] = [
-  { title: "Bem-vindo ao AtendIA! 🎉", description: "Vamos fazer um tour rápido pelo seu painel para você conhecer todas as funcionalidades." },
+  { title: "Bem-vindo ao D.Sync! 🎉", description: "Vamos fazer um tour rápido pelo seu painel para você conhecer todas as funcionalidades." },
   { title: "Dashboard", description: "Aqui você acompanha as métricas de desempenho: leads, mensagens, sentimentos e volume de atendimento." },
   { title: "Leads", description: "Visualize e gerencie todos os contatos capturados pelo robô, com filtros por status e sentimento." },
   { title: "Templates", description: "Crie respostas prontas que o robô pode usar para agilizar o atendimento." },

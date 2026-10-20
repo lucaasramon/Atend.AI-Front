@@ -47,7 +47,7 @@ export default function ResetPassword() {
           <div>
             <Link to="/" className="inline-flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
-              <span className="text-xl font-bold">AtendIA</span>
+              <span className="text-xl font-bold">D.Sync</span>
             </Link>
           </div>
           <Card>
@@ -74,7 +74,7 @@ export default function ResetPassword() {
             <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">AtendIA</span>
+            <span className="text-xl font-bold">D.Sync</span>
           </Link>
         </div>
         <Card>

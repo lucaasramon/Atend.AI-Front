@@ -12,7 +12,7 @@ export default function EmailConfirmed() {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
             <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
-            <span className="text-xl font-bold">AtendIA</span>
+            <span className="text-xl font-bold">D.Sync</span>
           </Link>
         </div>
 
@@ -23,7 +23,7 @@ export default function EmailConfirmed() {
           <CardContent className="text-center space-y-4">
             <h2 className="text-xl font-bold">Email confirmado com sucesso! 🎉</h2>
             <p className="text-muted-foreground">
-              Sua conta foi verificada. Agora você já pode acessar o AtendIA e começar a configurar seu robô de atendimento.
+              Sua conta foi verificada. Agora você já pode acessar o D.Sync e começar a configurar seu robô de atendimento.
             </p>
             <Button className="w-full" onClick={() => navigate("/login")}>
               Ir para o Login

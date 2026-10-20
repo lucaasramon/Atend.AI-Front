@@ -8,7 +8,7 @@ const sections = [
     title: "Primeiros Passos",
     icon: Zap,
     items: [
-      { q: "Como funciona o AtendIA?", a: "O AtendIA é um robô de atendimento via WhatsApp que responde automaticamente às mensagens dos seus clientes usando inteligência artificial. Ele captura leads, analisa sentimentos e pode ser personalizado com sua base de conhecimento." },
+      { q: "Como funciona o D.Sync?", a: "O D.Sync é um robô de atendimento via WhatsApp que responde automaticamente às mensagens dos seus clientes usando inteligência artificial. Ele captura leads, analisa sentimentos e pode ser personalizado com sua base de conhecimento." },
       { q: "Como meu robô é configurado?", a: "Após completar o cadastro, nossa equipe de suporte entra em contato para configurar o robô com suas informações, tom de voz e integrações necessárias." },
       { q: "Quanto tempo leva para ativar?", a: "Em média, a ativação completa leva de 24 a 48 horas úteis após a conclusão do onboarding." },
     ],
@@ -66,7 +66,7 @@ export default function ClientHelp() {
           <HelpCircle className="w-6 h-6 text-primary" />
           Central de Ajuda
         </h1>
-        <p className="text-muted-foreground">Tire suas dúvidas sobre o AtendIA</p>
+        <p className="text-muted-foreground">Tire suas dúvidas sobre o D.Sync</p>
       </div>
 
       <div className="grid gap-4">

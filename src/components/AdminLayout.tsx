@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border shrink-0">
         <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-md object-contain" />
-        {!compact && <span className="font-semibold text-foreground tracking-tight text-sm">N8N Orchestrator</span>}
+        {!compact && <span className="font-semibold text-foreground tracking-tight text-sm">D.Sync</span>}
       </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-2 space-y-1">
