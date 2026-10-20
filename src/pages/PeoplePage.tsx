@@ -17,6 +17,7 @@ import {
 } from "@/lib/forms";
 import PageHeader from "@/components/PageHeader";
 import ShareLink from "@/components/forms/ShareLink";
+import BirthdaySettingsDialog from "@/components/forms/BirthdaySettingsDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export default function PeoplePage() {
   const [open, setOpen] = useState<Person | null>(null);
   const [toDelete, setToDelete] = useState<Person | null>(null);
   const [busy, setBusy] = useState(false);
+  const [birthdays, setBirthdays] = useState(false);
 
   const load = () => api.get<Person[]>("/api/people").then(setPeople).catch(() => setPeople([]));
   useEffect(() => {
@@ -142,7 +144,12 @@ export default function PeoplePage() {
       <PageHeader
         title="Cadastros"
         description="Membros, frequentadores e visitantes que preencheram o formulário da igreja."
-        actions={<Button variant="outline" onClick={exportCsv} disabled={!list.length}><Download className="w-4 h-4 mr-2" />Planilha</Button>}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => setBirthdays(true)}><Cake className="w-4 h-4 mr-2" />Parabéns automáticos</Button>
+            <Button variant="outline" onClick={exportCsv} disabled={!list.length}><Download className="w-4 h-4 mr-2" />Planilha</Button>
+          </>
+        }
       />
 
       <Card>
@@ -248,6 +255,8 @@ export default function PeoplePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <BirthdaySettingsDialog open={birthdays} onOpenChange={setBirthdays} />
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>

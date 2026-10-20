@@ -84,6 +84,7 @@ const HELP: Record<string, PageHelp> = {
       "Filtrar novos, visitantes, frequentadores, membros e aniversariantes do mês",
       "Ver os dados, o pedido de oração e chamar no WhatsApp",
       "Incluir a pessoa nas Escalas (vira membro com as áreas que ela escolheu)",
+      "Parabéns automáticos: o robô manda no WhatsApp de cada aniversariante do dia uma mensagem da igreja com um versículo",
       "Baixar a planilha",
     ],
   },
