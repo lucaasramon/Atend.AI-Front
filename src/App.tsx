@@ -42,6 +42,10 @@ import AcksPage from "@/pages/AcksPage";
 import ConfirmAck from "@/pages/ConfirmAck";
 import RosterPage from "@/pages/RosterPage";
 import MemberChecklist from "@/pages/MemberChecklist";
+import SignupPage from "@/pages/SignupPage";
+import EventSignupPage from "@/pages/EventSignupPage";
+import PeoplePage from "@/pages/PeoplePage";
+import FormsPage from "@/pages/FormsPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -66,6 +70,8 @@ const App = () => (
               <Route path="/primeiro-acesso" element={<FirstAccess />} />
               <Route path="/confirmar" element={<ConfirmAck />} />
               <Route path="/checklist" element={<MemberChecklist />} />
+              <Route path="/cadastro" element={<SignupPage />} />
+              <Route path="/inscricao/:slug" element={<EventSignupPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/email-confirmed" element={<EmailConfirmed />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -92,6 +98,8 @@ const App = () => (
               <Route path="/admin/locais" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><LocationsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/pops" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><PopsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/escalas" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><RosterPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/inscricoes" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><FormsPage /></AdminLayout></AdminProtectedRoute>} />
+              <Route path="/admin/cadastros" element={<AdminProtectedRoute><AdminLayout><PeoplePage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/midia" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><MediaPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/confirmacoes" element={<AdminProtectedRoute><AdminLayout><AcksPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/aprovacoes" element={<AdminProtectedRoute><AdminLayout><ApprovalsPage /></AdminLayout></AdminProtectedRoute>} />

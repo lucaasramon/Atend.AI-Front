@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { format, startOfDay, subDays, differenceInCalendarDays } from "date-fns";
+import { format, isPast, startOfDay, subDays, differenceInCalendarDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { ptBR } from "date-fns/locale";
 import {
   CalendarDays,
@@ -17,6 +18,7 @@ import {
   ListChecks,
   FileUp,
   UsersRound,
+  ClipboardPen,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +79,7 @@ interface RobotGroup extends Group {
 export default function Events() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === "admin";
   const canEdit = user?.role === "admin" || user?.role === "agenda";
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -347,6 +350,17 @@ export default function Events() {
             <UsersRound className="w-4 h-4" />
             {ev.roster_count > 0 && <span className="ml-1 text-xs">{ev.roster_count}</span>}
           </Button>
+          {(ev.form_id || (canManageEvent(user, ev) && !isPast(new Date(ev.starts_at)))) && user?.role !== "viewer" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              title={ev.form_id ? "Inscrições do evento" : "Criar formulário de inscrição"}
+              onClick={() => navigate(`/admin/inscricoes?event=${ev.id}${ev.form_id ? "" : "&criar=1"}`)}
+            >
+              <ClipboardPen className="w-4 h-4" />
+              {ev.form_id && <span className="ml-1 text-xs">{ev.registrations_count}</span>}
+            </Button>
+          )}
           <Button size="icon" variant="ghost" title="Prévia da mensagem" onClick={() => openPreview(ev)}><Eye className="w-4 h-4" /></Button>
           {canManageEvent(user, ev) && (
             <>

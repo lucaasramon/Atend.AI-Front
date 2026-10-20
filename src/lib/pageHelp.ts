@@ -63,6 +63,30 @@ const HELP: Record<string, PageHelp> = {
       "A escala também aparece ao abrir o evento na Agenda e no Calendário",
     ],
   },
+  "/admin/inscricoes": {
+    purpose:
+      "Formulários de inscrição dos eventos (retiro, curso, conferência). Cada formulário tem um link e um QR code; quem se inscreve aparece na lista na hora.",
+    who: "Administrador e Agenda (Agenda só nos eventos das suas áreas).",
+    actions: [
+      "Criar formulário: escolher o evento, limite de vagas, prazo e perguntas extras (camiseta, alergia...)",
+      "Compartilhar o link no WhatsApp ou projetar o QR code",
+      "Acompanhar inscritos e lista de espera (a lista atualiza sozinha)",
+      "Abrir/fechar inscrições, remover inscritos e baixar a planilha",
+      "Na Agenda, o botão de prancheta em cada evento abre ou cria o formulário",
+    ],
+  },
+  "/admin/cadastros": {
+    purpose:
+      "Cadastro de membros, frequentadores e visitantes feito pela própria pessoa, por um link (sem login). Se a pessoa preencher de novo com o mesmo WhatsApp, os dados são atualizados.",
+    who: ADMIN,
+    actions: [
+      "Compartilhar o link ou o QR code do cadastro",
+      "Filtrar novos, visitantes, frequentadores, membros e aniversariantes do mês",
+      "Ver os dados, o pedido de oração e chamar no WhatsApp",
+      "Incluir a pessoa nas Escalas (vira membro com as áreas que ela escolheu)",
+      "Baixar a planilha",
+    ],
+  },
   "/admin/midia": {
     purpose:
       "Demandas da equipe de mídia (posts, artes, captações, gravações) com prazos, responsáveis e briefing. O robô lembra o responsável 2 dias antes e no dia do prazo.",

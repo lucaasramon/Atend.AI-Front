@@ -23,6 +23,8 @@ import {
   Clapperboard,
   Eye,
   UsersRound,
+  ClipboardPen,
+  UserPlus,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +34,10 @@ import PageHelpBox from "@/components/PageHelpBox";
 import InstallAppButton from "@/components/InstallAppButton";
 import { useAuth } from "@/contexts/AuthContext";
 
-type BadgeKey = "notifications" | "approvals";
+type BadgeKey = "notifications" | "approvals" | "people";
 
-// team: também aparece para os perfis "agenda" e "viewer"
-const navItems: { path: string; label: string; icon: typeof LayoutDashboard; badge?: BadgeKey; team?: boolean }[] = [
+// team: também aparece para os perfis "agenda" e "viewer"; editors: só admin e agenda
+const navItems: { path: string; label: string; icon: typeof LayoutDashboard; badge?: BadgeKey; team?: boolean; editors?: boolean }[] = [
   // Ocultos por enquanto (atendimento por IA):
   // { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   // { path: "/admin/clients", label: "Clientes", icon: Users },
@@ -45,6 +47,8 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
   { path: "/admin/pops", label: "POPs", icon: ClipboardList, team: true },
   { path: "/admin/escalas", label: "Escalas", icon: UsersRound, team: true },
   { path: "/admin/midia", label: "Mídia", icon: Clapperboard, team: true },
+  { path: "/admin/inscricoes", label: "Inscrições", icon: ClipboardPen, editors: true },
+  { path: "/admin/cadastros", label: "Cadastros", icon: UserPlus, badge: "people" },
   { path: "/admin/confirmacoes", label: "Confirmações", icon: Eye },
   { path: "/admin/aprovacoes", label: "Aprovações", icon: ClipboardCheck, badge: "approvals" },
   { path: "/admin/ministerios", label: "Ministérios", icon: Church },
@@ -58,12 +62,14 @@ const navItems: { path: string; label: string; icon: typeof LayoutDashboard; bad
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [counts, setCounts] = useState<Record<BadgeKey, number>>({ notifications: 0, approvals: 0 });
+  const [counts, setCounts] = useState<Record<BadgeKey, number>>({ notifications: 0, approvals: 0, people: 0 });
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const isAdmin = user?.role === "admin";
-  const visibleItems = isAdmin ? navItems : navItems.filter((item) => item.team);
+  const visibleItems = isAdmin
+    ? navItems
+    : navItems.filter((item) => item.team || (item.editors && user?.role === "agenda"));
   const current = visibleItems.find(
     (i) => location.pathname === i.path || (i.path !== "/admin" && location.pathname.startsWith(i.path))
   );
@@ -79,11 +85,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
   const loadCounts = async () => {
-    const [n, a] = await Promise.all([
+    const [n, a, p] = await Promise.all([
       api.get<{ count: number }>("/api/notifications/admin/unread-count").catch(() => ({ count: 0 })),
       api.get<{ count: number }>("/api/events/pending-count").catch(() => ({ count: 0 })),
+      api.get<{ count: number }>("/api/people/new-count").catch(() => ({ count: 0 })),
     ]);
-    setCounts({ notifications: n.count || 0, approvals: a.count || 0 });
+    setCounts({ notifications: n.count || 0, approvals: a.count || 0, people: p.count || 0 });
   };
 
   /** Menu (usado na barra lateral do computador e na gaveta do celular) */
@@ -180,7 +187,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               aria-label="Abrir menu"
             >
               <Menu className="w-5 h-5" />
-              {isAdmin && counts.approvals + counts.notifications > 0 && (
+              {isAdmin && counts.approvals + counts.notifications + counts.people > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
               )}
             </button>

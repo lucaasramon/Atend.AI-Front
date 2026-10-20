@@ -31,6 +31,9 @@ export interface EventItem {
   tasks_total: number;
   tasks_done: number;
   roster_count: number;
+  /** Formulário de inscrição do evento (se tiver) e quantos confirmados */
+  form_id: string | null;
+  registrations_count: number;
 }
 
 /** Uma pessoa escalada num evento */
