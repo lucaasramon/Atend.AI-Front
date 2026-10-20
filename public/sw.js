@@ -4,7 +4,7 @@
  * - Arquivos do build (/assets, com hash no nome) e ícones: guarda no aparelho para abrir mais rápido.
  * - Chamadas da API nunca passam pelo cache.
  */
-const CACHE = "dsync-v2"; // mude a versão quando logo/ícones mudarem
+const CACHE = "dsync-v3"; // mude a versão quando logo/ícones mudarem
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon-192.png", "/logo.png"];
 
 self.addEventListener("install", (event) => {
