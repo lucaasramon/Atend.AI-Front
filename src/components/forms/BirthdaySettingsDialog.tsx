@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Config {
@@ -16,6 +17,7 @@ interface Config {
   gap_min: number;
   gap_max: number;
   template: string;
+  verse: string;
   default_template: string;
   verses: string[];
   running: boolean;
@@ -31,7 +33,9 @@ interface Props {
 export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const [cfg, setCfg] = useState<Config | null>(null);
-  const [form, setForm] = useState({ enabled: true, church: "", gap_min: "3", gap_max: "10", template: "" });
+  const [form, setForm] = useState({ enabled: true, church: "", gap_min: "3", gap_max: "10", template: "", verse: "" });
+  // Versículo: sorteado a cada mensagem ou sempre o mesmo (um da lista ou escrito à mão)
+  const [verseMode, setVerseMode] = useState<"random" | "fixed">("random");
   const [verse, setVerse] = useState(0);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -41,7 +45,8 @@ export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
     setCfg(null);
     api.get<Config>("/api/people/birthdays").then((c) => {
       setCfg(c);
-      setForm({ enabled: c.enabled, church: c.church, gap_min: String(c.gap_min), gap_max: String(c.gap_max), template: c.template });
+      setForm({ enabled: c.enabled, church: c.church, gap_min: String(c.gap_min), gap_max: String(c.gap_max), template: c.template, verse: c.verse });
+      setVerseMode(c.verse ? "fixed" : "random");
       setVerse(Math.floor(Math.random() * c.verses.length));
     }).catch((e: Error) => toast({ title: "Não foi possível carregar", description: e.message, variant: "destructive" }));
   }, [open]);
@@ -51,14 +56,23 @@ export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
     return form.template
       .replace(/\{nome\}/g, "Maria")
       .replace(/\{igreja\}/g, form.church || "a igreja")
-      .replace(/\{versiculo\}/g, cfg.verses[verse] || "")
+      .replace(/\{versiculo\}/g, verseMode === "fixed" ? form.verse : cfg.verses[verse] || "")
       .trim();
-  }, [cfg, form.template, form.church, verse]);
+  }, [cfg, form.template, form.church, form.verse, verseMode, verse]);
 
   const save = async () => {
+    if (verseMode === "fixed" && !form.verse.trim()) {
+      toast({ title: "Escolha ou escreva o versículo", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      await api.put("/api/people/birthdays", { ...form, gap_min: Number(form.gap_min), gap_max: Number(form.gap_max) });
+      await api.put("/api/people/birthdays", {
+        ...form,
+        verse: verseMode === "fixed" ? form.verse.trim() : "",
+        gap_min: Number(form.gap_min),
+        gap_max: Number(form.gap_max),
+      });
       toast({ title: form.enabled ? "Parabéns automáticos ligados" : "Parabéns automáticos desligados" });
       onOpenChange(false);
     } catch (e: any) {
@@ -71,7 +85,7 @@ export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
   const test = async () => {
     setTesting(true);
     try {
-      await api.post("/api/people/birthdays/test", { church: form.church, template: form.template });
+      await api.post("/api/people/birthdays/test", { church: form.church, template: form.template, verse: verseMode === "fixed" ? form.verse : "" });
       toast({ title: "Exemplo enviado para o seu WhatsApp", description: "Pode levar alguns segundos para chegar." });
     } catch (e: any) {
       toast({ title: "Não foi possível enviar o teste", description: e.message, variant: "destructive" });
@@ -93,7 +107,7 @@ export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Todo dia, a partir das 8h, o robô D.Sync manda no WhatsApp de cada aniversariante do dia (pessoas de Cadastros com data de nascimento)
-              uma mensagem em nome da igreja, com um versículo sorteado. Quem se cadastrar mais tarde no dia do aniversário também recebe (o sistema confere de hora em hora, até as 20h).
+              uma mensagem em nome da igreja, com um versículo. Quem se cadastrar mais tarde no dia do aniversário também recebe (o sistema confere de hora em hora, até as 20h).
             </p>
 
             <label className="flex items-center gap-3 rounded-md border border-border p-3 cursor-pointer">
@@ -117,6 +131,43 @@ export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
               </div>
             </div>
 
+            <div className="space-y-2 rounded-md border border-border p-3">
+              <Label>Versículo</Label>
+              <div className="flex gap-2">
+                {(["fixed", "random"] as const).map((m) => (
+                  <Button
+                    key={m}
+                    type="button"
+                    size="sm"
+                    variant={verseMode === m ? "default" : "outline"}
+                    onClick={() => {
+                      setVerseMode(m);
+                      if (m === "fixed" && !form.verse) setForm({ ...form, verse: cfg.verses[0] });
+                    }}
+                  >
+                    {m === "fixed" ? "Sempre o mesmo" : `Sortear entre ${cfg.verses.length}`}
+                  </Button>
+                ))}
+              </div>
+              {verseMode === "fixed" && (
+                <>
+                  <Select value={cfg.verses.includes(form.verse) ? form.verse : undefined} onValueChange={(v) => setForm({ ...form, verse: v })}>
+                    <SelectTrigger className="text-left h-auto min-h-10 whitespace-normal"><SelectValue placeholder="Escolha da lista ou escreva abaixo" /></SelectTrigger>
+                    <SelectContent className="max-w-[90vw]">
+                      {cfg.verses.map((v) => <SelectItem key={v} value={v} className="whitespace-normal">{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Textarea
+                    rows={2}
+                    className="text-sm"
+                    placeholder="Ou escreva o versículo, com a referência no final"
+                    value={form.verse}
+                    onChange={(e) => setForm({ ...form, verse: e.target.value })}
+                  />
+                </>
+              )}
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -129,13 +180,15 @@ export default function BirthdaySettingsDialog({ open, onOpenChange }: Props) {
                 </div>
                 <Textarea rows={14} className="text-sm" value={form.template} onChange={(e) => setForm({ ...form, template: e.target.value })} />
                 <p className="text-[11px] text-muted-foreground">
-                  <b>{"{nome}"}</b> primeiro nome · <b>{"{igreja}"}</b> nome da igreja · <b>{"{versiculo}"}</b> versículo sorteado ({cfg.verses.length} opções)
+                  <b>{"{nome}"}</b> primeiro nome · <b>{"{igreja}"}</b> nome da igreja · <b>{"{versiculo}"}</b> versículo
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Prévia</Label>
-                  <button className="text-xs text-primary hover:underline" onClick={() => setVerse((v) => (v + 1) % cfg.verses.length)}>Outro versículo</button>
+                  {verseMode === "random" && (
+                    <button className="text-xs text-primary hover:underline" onClick={() => setVerse((v) => (v + 1) % cfg.verses.length)}>Outro versículo</button>
+                  )}
                 </div>
                 <div className="rounded-lg bg-[#005c4b] text-white p-3 text-sm whitespace-pre-wrap shadow-sm">
                   {preview.split(/(\*[^*\n]+\*)/g).map((part, i) =>
