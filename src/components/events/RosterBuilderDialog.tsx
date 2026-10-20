@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AlertTriangle, Loader2, Search, Users } from "lucide-react";
+import { AlertTriangle, Loader2, MessageCircle, Search, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { RosterEntry } from "@/lib/events";
@@ -56,6 +56,9 @@ interface Props {
 
 type Pick = { task: string; area_id: string | null };
 
+/** Valor do seletor de grupo quando a escala não deve ir para nenhum grupo */
+const NO_GROUP = "none";
+
 export default function RosterBuilderDialog({ open, onOpenChange, events, ministries, members, functions, initial, onSaved }: Props) {
   const { toast } = useToast();
   const [eventId, setEventId] = useState("");
@@ -70,6 +73,10 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
   const [otherPlaces, setOtherPlaces] = useState<Record<string, string[]>>({});
   // Confirmação de escalar alguém em dois lugares: all = quem seria incluído, busy = quem já serve
   const [confirmDouble, setConfirmDouble] = useState<{ all: string[]; busy: string[] } | null>(null);
+  // Grupos liberados do robô e o grupo escolhido para receber a escala 1 dia antes ("" = ainda não escolhido)
+  const [groups, setGroups] = useState<{ id: string; subject: string }[]>([]);
+  const [groupJid, setGroupJid] = useState("");
+  const [groupSentAt, setGroupSentAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +84,24 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
     setMinistryId(initial?.ministryId || (ministries.length === 1 ? ministries[0].id : ""));
     setSearch("");
     setShowAll(false);
+    api.get<{ groups: { id: string; subject: string }[] }>("/api/events/config")
+      .then((c) => setGroups(c.groups || []))
+      .catch(() => setGroups([]));
   }, [open]);
+
+  // Grupo da escala desta área no evento (ou o último usado pela área, como sugestão)
+  useEffect(() => {
+    setGroupJid("");
+    setGroupSentAt(null);
+    if (!open || !eventId || !ministryId) return;
+    api.get<{ group_jid: string | null; sent_at: string | null; suggested: string | null }>(`/api/events/${eventId}/roster/group/${ministryId}`)
+      .then((g) => {
+        setGroupSentAt(g.sent_at);
+        if (g.group_jid) setGroupJid(g.group_jid);
+        else if (g.suggested) setGroupJid(g.suggested);
+      })
+      .catch(() => {});
+  }, [open, eventId, ministryId]);
 
   // Carrega a escala que já existe para essa área nesse evento (para editar)
   useEffect(() => {
@@ -156,11 +180,22 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
       toast({ title: "Escolha o evento e a área", variant: "destructive" });
       return;
     }
+    const entries = Object.entries(picked).map(([member_id, v]) => ({ member_id, task: v.task, area_id: v.area_id }));
+    if (entries.length && !groupJid) {
+      toast({ title: "Escolha o grupo", description: "Diga para qual grupo a escala vai 1 dia antes do evento (ou \"Não enviar em grupo\").", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      const entries = Object.entries(picked).map(([member_id, v]) => ({ member_id, task: v.task, area_id: v.area_id }));
-      await api.put(`/api/events/${eventId}/roster/ministry/${ministryId}`, { entries });
-      toast({ title: entries.length ? `Escala salva: ${entries.length} pessoa(s)` : "Escala da área removida do evento" });
+      await api.put(`/api/events/${eventId}/roster/ministry/${ministryId}`, {
+        entries,
+        group_jid: groupJid && groupJid !== NO_GROUP ? groupJid : null,
+      });
+      const groupName = groups.find((g) => g.id === groupJid)?.subject;
+      toast({
+        title: entries.length ? `Escala salva: ${entries.length} pessoa(s)` : "Escala da área removida do evento",
+        description: entries.length && groupName ? `Vai para o grupo "${groupName}" 1 dia antes do evento.` : undefined,
+      });
       onOpenChange(false);
       onSaved();
     } catch (e: any) {
@@ -282,6 +317,26 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
                     </div>
                   );
                 })}
+              </div>
+              <div className="space-y-2 rounded-md border border-border p-3">
+                <Label className="flex items-center gap-2"><MessageCircle className="w-4 h-4" />Enviar a escala para qual grupo? *</Label>
+                <Select value={groupJid || undefined} onValueChange={setGroupJid}>
+                  <SelectTrigger><SelectValue placeholder="Escolha o grupo do WhatsApp" /></SelectTrigger>
+                  <SelectContent>
+                    {groups.map((g) => <SelectItem key={g.id} value={g.id}>{g.subject}</SelectItem>)}
+                    <SelectItem value={NO_GROUP}>Não enviar em grupo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {groupJid === NO_GROUP
+                    ? "A escala não será enviada em grupo (cada pessoa continua recebendo o seu aviso)."
+                    : groupSentAt && groups.some((g) => g.id === groupJid)
+                      ? `Já enviada ao grupo em ${format(new Date(groupSentAt), "dd/MM 'às' HH:mm")}. Se trocar o grupo, ela é enviada de novo.`
+                      : "O robô D.Sync manda a lista de quem serve e o que cada um faz 1 dia antes do evento."}
+                </p>
+                {groups.length === 0 && (
+                  <p className="text-xs text-warning">Nenhum grupo liberado para o robô. Um administrador libera em Agenda → Grupos.</p>
+                )}
               </div>
               {ministryFunctions.length > 0 && (
                 <p className="text-xs text-muted-foreground">
