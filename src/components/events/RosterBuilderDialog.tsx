@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Users } from "lucide-react";
+import { AlertTriangle, Loader2, Search, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { RosterEntry } from "@/lib/events";
@@ -12,6 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface RosterMember {
@@ -56,6 +66,10 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [saving, setSaving] = useState(false);
+  // member_id → onde já serve neste evento (outras áreas), ex.: ["Louvor — Vocal"]
+  const [otherPlaces, setOtherPlaces] = useState<Record<string, string[]>>({});
+  // Confirmação de escalar alguém em dois lugares: all = quem seria incluído, busy = quem já serve
+  const [confirmDouble, setConfirmDouble] = useState<{ all: string[]; busy: string[] } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -78,8 +92,17 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
         const mine = list.filter((r) => r.ministry_id === ministryId);
         setExisting(mine.length);
         setPicked(Object.fromEntries(mine.map((r) => [r.member_id, { task: r.task || r.area || "", area_id: r.area_id }])));
+        // Onde cada pessoa já serve neste evento (em outras áreas)
+        const elsewhere: Record<string, string[]> = {};
+        for (const r of list.filter((x) => x.ministry_id !== ministryId)) {
+          (elsewhere[r.member_id] ||= []).push(r.task || r.area ? `${r.ministry} — ${r.task || r.area}` : r.ministry);
+        }
+        setOtherPlaces(elsewhere);
       })
-      .catch(() => setPicked({}))
+      .catch(() => {
+        setPicked({});
+        setOtherPlaces({});
+      })
       .finally(() => setLoadingExisting(false));
   }, [open, eventId, ministryId]);
 
@@ -95,21 +118,38 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
       .sort((a, b) => Number(!!picked[b.id]) - Number(!!picked[a.id]) || a.name.localeCompare(b.name, "pt-BR"));
   }, [members, ministryId, showAll, search, picked]);
 
-  const toggle = (id: string) =>
-    setPicked((p) => {
-      const next = { ...p };
-      if (next[id]) delete next[id];
-      else next[id] = { task: "", area_id: null };
-      return next;
-    });
+  const add = (ids: string[]) =>
+    setPicked((p) => ({ ...Object.fromEntries(ids.map((id) => [id, { task: "", area_id: null }])), ...p }));
+
+  // Marcar alguém que já serve em outra área do evento pede confirmação
+  const toggle = (id: string) => {
+    if (picked[id]) {
+      setPicked((p) => {
+        const next = { ...p };
+        delete next[id];
+        return next;
+      });
+    } else if (otherPlaces[id]) {
+      setConfirmDouble({ all: [id], busy: [id] });
+    } else {
+      add([id]);
+    }
+  };
 
   const setTask = (id: string, task: string) => {
     const fn = ministryFunctions.find((f) => f.name.toLowerCase() === task.trim().toLowerCase());
     setPicked((p) => ({ ...p, [id]: { task, area_id: fn?.id || null } }));
   };
 
-  const selectAll = () =>
-    setPicked((p) => ({ ...Object.fromEntries(people.map((m) => [m.id, p[m.id] || { task: "", area_id: null }])), ...p }));
+  const selectAll = () => {
+    const fresh = people.map((m) => m.id).filter((id) => !picked[id]);
+    const busy = fresh.filter((id) => otherPlaces[id]);
+    if (busy.length) setConfirmDouble({ all: fresh, busy });
+    else add(fresh);
+  };
+
+  const memberName = (id: string) => members.find((m) => m.id === id)?.name || "";
+  const ministryName = ministries.find((m) => m.id === ministryId)?.name || "esta área";
 
   const save = async () => {
     if (!eventId || !ministryId) {
@@ -216,6 +256,11 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
                           <span className="block text-[11px] text-muted-foreground truncate">
                             {[m.church_role, m.ministries.map((x) => x.name).join(", ") || "sem área", m.whatsapp ? null : "sem WhatsApp"].filter(Boolean).join(" · ")}
                           </span>
+                          {otherPlaces[m.id] && (
+                            <span className="mt-0.5 inline-block rounded bg-warning/15 px-1.5 py-0.5 text-[11px] text-warning">
+                              Já em {otherPlaces[m.id].join(" e ")}
+                            </span>
+                          )}
                         </span>
                       </label>
                       {on && (
@@ -254,6 +299,47 @@ export default function RosterBuilderDialog({ open, onOpenChange, events, minist
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Pessoa já escalada em outra área do mesmo evento */}
+      <AlertDialog open={!!confirmDouble} onOpenChange={(o) => !o && setConfirmDouble(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              {confirmDouble?.busy.length === 1 ? "Essa pessoa já está escalada neste evento" : "Algumas pessoas já estão escaladas neste evento"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <ul className="space-y-1">
+                  {confirmDouble?.busy.map((id) => (
+                    <li key={id}>
+                      <b className="text-foreground">{memberName(id)}</b> já serve em {otherPlaces[id]?.join(" e ")}.
+                    </li>
+                  ))}
+                </ul>
+                <p>
+                  Quer {confirmDouble?.busy.length === 1 ? "escalá-la" : "escalá-las"} também em <b className="text-foreground">{ministryName}</b>,
+                  servindo em dois lugares no mesmo evento?
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            {confirmDouble && confirmDouble.all.length > confirmDouble.busy.length && (
+              <AlertDialogAction
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                onClick={() => add(confirmDouble.all.filter((id) => !confirmDouble.busy.includes(id)))}
+              >
+                Só quem está livre
+              </AlertDialogAction>
+            )}
+            <AlertDialogAction onClick={() => confirmDouble && add(confirmDouble.all)}>
+              {confirmDouble && confirmDouble.all.length > confirmDouble.busy.length ? "Incluir todos" : "Sim, escalar nos dois"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
