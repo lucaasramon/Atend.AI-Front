@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { STRIPE_PLANS, PlanId } from "@/lib/stripe-plans";
+import InstallAppButton from "@/components/InstallAppButton";
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -190,9 +191,7 @@ export default function LoginPage() {
           </Tabs>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">← Voltar para o site</Link>
-        </p>
+        <InstallAppButton className="flex items-center justify-center gap-0 w-full py-2.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors" />
       </div>
     </div>
   );

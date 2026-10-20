@@ -1,0 +1,24 @@
+{
+  "name": "D.Sync — Agenda da Igreja",
+  "short_name": "D.Sync",
+  "description": "Agenda, escalas e lembretes da igreja no WhatsApp",
+  "lang": "pt-BR",
+  "id": "/",
+  "start_url": "/login?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1117",
+  "theme_color": "#0e1117",
+  "categories": ["productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Agenda", "url": "/admin/agenda", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Calendário", "url": "/admin/calendario", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Escalas", "url": "/admin/escalas", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

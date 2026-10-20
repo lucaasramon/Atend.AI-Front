@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useTheme } from "@/components/ThemeProvider";
 import PageHelpBox from "@/components/PageHelpBox";
+import InstallAppButton from "@/components/InstallAppButton";
 import { useAuth } from "@/contexts/AuthContext";
 
 type BadgeKey = "notifications" | "approvals";
@@ -123,6 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       <div className="p-2 border-t border-sidebar-border space-y-1 shrink-0">
+        <InstallAppButton compact={compact} />
         <button
           onClick={toggleTheme}
           className="flex items-center justify-center w-full py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
