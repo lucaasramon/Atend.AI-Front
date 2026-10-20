@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
 import { helpFor } from "@/lib/pageHelp";
 
-const STORAGE_KEY = "page_help_hidden";
+// Telas em que a pessoa deixou a explicação aberta (fechada é o padrão)
+const STORAGE_KEY = "page_help_open";
 
-const readHidden = (): string[] => {
+const readOpen = (): string[] => {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   } catch {
@@ -12,19 +13,19 @@ const readHidden = (): string[] => {
   }
 };
 
-/** Quadro "Para que serve esta tela?" — pode ser recolhido (lembrado por tela) */
+/** Quadro "Para que serve esta tela?" — começa fechado; abrir fica lembrado por tela */
 export default function PageHelpBox({ path }: { path: string }) {
   const help = helpFor(path);
   const key = path.replace(/\/[0-9a-f-]{36}$/i, "/");
-  const [hidden, setHidden] = useState(() => readHidden().includes(key));
+  const [hidden, setHidden] = useState(() => !readOpen().includes(key));
 
-  useEffect(() => setHidden(readHidden().includes(key)), [key]);
+  useEffect(() => setHidden(!readOpen().includes(key)), [key]);
 
   if (!help) return null;
 
   const toggle = () => {
-    const list = readHidden().filter((k) => k !== key);
-    if (!hidden) list.push(key);
+    const list = readOpen().filter((k) => k !== key);
+    if (hidden) list.push(key);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     } catch {
