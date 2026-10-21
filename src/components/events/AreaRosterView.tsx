@@ -283,7 +283,9 @@ export default function AreaRosterView({ events, ministries, members, userId, us
         </div>
       ) : (
         /* ---------- Quadro: pessoas × datas ---------- */
-        <div className="rounded-xl border border-border bg-card overflow-x-auto">
+        // Cartão fixo; só a tabela rola na horizontal (a legenda fica parada embaixo)
+        <div className="rounded-xl border border-border bg-card overflow-hidden max-w-full">
+          <div className="overflow-x-auto overscroll-x-contain">
           <table className="text-sm border-collapse min-w-full">
             <thead>
               <tr>
@@ -340,6 +342,7 @@ export default function AreaRosterView({ events, ministries, members, userId, us
               })}
             </tbody>
           </table>
+          </div>
           <p className="text-[11px] text-muted-foreground px-3 py-2 border-t border-border">
             Colunas em laranja: datas sem ninguém escalado. "Vezes" em laranja: 3 ou mais escalas no período.
           </p>
