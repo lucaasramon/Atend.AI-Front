@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ChipSelect from "@/components/events/ChipSelect";
 import RosterGroups from "@/components/events/RosterGroups";
+import AreaRosterView from "@/components/events/AreaRosterView";
 import RosterBuilderDialog, { RosterMember, ServiceFunction } from "@/components/events/RosterBuilderDialog";
 import PageHeader from "@/components/PageHeader";
 
@@ -183,12 +184,29 @@ export default function RosterPage() {
         actions={canEdit && <Button onClick={() => setBuilder({})}><Plus className="w-4 h-4 mr-2" />Criar escala</Button>}
       />
 
-      <Tabs defaultValue="escalas">
+      <Tabs defaultValue={user?.ministry_ids?.length ? "area" : "escalas"}>
         <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="escalas" className="flex-1 sm:flex-none">Escalas</TabsTrigger>
+          <TabsTrigger value="area" className="flex-1 sm:flex-none">Por área</TabsTrigger>
+          <TabsTrigger value="escalas" className="flex-1 sm:flex-none">Por evento</TabsTrigger>
           <TabsTrigger value="membros" className="flex-1 sm:flex-none">Membros ({members.length})</TabsTrigger>
           <TabsTrigger value="funcoes" className="flex-1 sm:flex-none">Funções ({areas.length})</TabsTrigger>
         </TabsList>
+
+        {/* ---------- Escala de uma área, por data ---------- */}
+        <TabsContent value="area">
+          <AreaRosterView
+            events={overview}
+            ministries={ministries}
+            members={members}
+            userId={user?.id}
+            userMinistryIds={user?.ministry_ids}
+            period={period}
+            periods={PERIODS}
+            onPeriod={setPeriod}
+            onEdit={canEdit ? (eventId, ministryId) => setBuilder({ eventId, ministryId }) : undefined}
+            canEditMinistry={canEditMinistry}
+          />
+        </TabsContent>
 
         {/* ---------- Visão geral das escalas ---------- */}
         <TabsContent value="escalas" className="space-y-4">

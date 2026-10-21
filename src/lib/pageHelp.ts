@@ -67,7 +67,10 @@ const HELP: Record<string, PageHelp> = {
       "Quem serve em cada culto e em qual área. Na véspera, cada escalado recebe no WhatsApp o checklist da sua área e marca os itens pelo celular.",
     who: ALL,
     actions: [
-      "Ver os próximos eventos com a escala de todas as áreas",
+      "Por área: escolher a área (a sua já vem marcada) e ver a escala por data, com destaque para os dias em que você serve",
+      "Por área → Quadro: pessoas × datas, para o líder ver quem está sobrecarregado e quem ainda não serviu",
+      "Copiar a escala da área já formatada para o grupo do WhatsApp",
+      "Por evento: os próximos eventos com a escala de todas as áreas",
       "Criar escala: escolher evento e área, marcar as pessoas e o que cada uma vai fazer",
       "Usuários da plataforma já aparecem como membros, com as suas áreas",
       "Cadastrar quem serve sem usar o sistema e as funções (com POP) de cada área",
