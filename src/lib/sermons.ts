@@ -33,7 +33,28 @@ export interface SermonBlock {
   notes: string;
   minutes: number;
   verses: Verse[];
+  /** Frases que o pastor quer no telão (pregações antigas podem não ter) */
+  phrases?: string[];
 }
+
+/** Um slide da projeção: versículo ou frase, na ordem da pregação */
+export interface ProjectionSlide {
+  kind: "verse" | "phrase";
+  text: string;
+  ref?: string;
+  blockTitle: string;
+}
+
+export function projectionSlides(blocks: SermonBlock[]): ProjectionSlide[] {
+  return blocks.flatMap((b) => [
+    ...b.verses.filter((v) => v.ref || v.text.trim()).map((v) => ({ kind: "verse" as const, text: v.text.trim(), ref: v.ref.trim(), blockTitle: b.title })),
+    ...(b.phrases || []).filter((p) => p.trim()).map((p) => ({ kind: "phrase" as const, text: p.trim(), blockTitle: b.title })),
+  ]);
+}
+
+/** Texto para colar no programa de projeção (um slide por parágrafo) */
+export const projectionText = (slides: ProjectionSlide[]) =>
+  slides.map((s) => (s.kind === "verse" ? [s.text, s.ref && `(${s.ref})`].filter(Boolean).join(" ") : s.text)).join("\n\n");
 
 export interface Sermon {
   id: string;
@@ -63,6 +84,7 @@ export const newBlock = (kind: BlockKind, title = BLOCK_LABEL[kind], minutes = 5
   notes: "",
   minutes,
   verses: [],
+  phrases: [],
 });
 
 /** Esboço inicial de uma pregação nova */

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowDown, ArrowLeft, ArrowUp, BookMarked, Check, CloudOff, Copy, Loader2, MonitorPlay, Plus, StickyNote, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, BookMarked, Check, CloudOff, Copy, Loader2, MonitorPlay, Plus, Presentation, Quote, StickyNote, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cap } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,8 @@ import {
   minutesLabel,
   newBlock,
   plannedMinutes,
+  projectionSlides,
+  projectionText,
 } from "@/lib/sermons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,7 +112,8 @@ export default function SermonEditorPage() {
   };
 
   const upcoming = events.filter((e) => e.status !== "rejected" && (!isPast(new Date(e.starts_at)) || e.id === sermon.event_id));
-  const allVerses = blocks.flatMap((b) => b.verses).filter((v) => v.ref || v.text);
+  const slides = projectionSlides(blocks);
+  const phraseCount = slides.filter((s) => s.kind === "phrase").length;
 
   const copy = async (text: string, what: string) => {
     try {
@@ -181,15 +184,25 @@ export default function SermonEditorPage() {
         </CardContent>
       </Card>
 
-      {/* Mídia: todos os versículos de uma vez */}
-      {!edit && allVerses.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-medium flex items-center gap-2"><BookMarked className="w-4 h-4 text-primary" />Versículos para projetar ({allVerses.length})</p>
-              <Button size="sm" variant="outline" onClick={() => copy(allVerses.map(verseText).join("\n\n"), "Versículos")}><Copy className="w-4 h-4 mr-1.5" />Copiar todos</Button>
+      {/* Projeção: versículos e frases do telão, na ordem da pregação */}
+      {slides.length > 0 && (
+        <Card className="border-primary/40">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-medium flex items-center gap-2"><Presentation className="w-4 h-4 text-primary" />Para a projeção</p>
+                <p className="text-xs text-muted-foreground">
+                  {slides.length - phraseCount} versículo(s) e {phraseCount} frase(s), na ordem da pregação.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => copy(projectionText(slides), "Texto da projeção")}><Copy className="w-4 h-4 mr-1.5" />Copiar tudo</Button>
+                <Button size="sm" onClick={() => window.open(`/projecao/${sermon.id}`, "_blank")}><Presentation className="w-4 h-4 mr-1.5" />Abrir projeção</Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Na ordem em que aparecem na pregação.</p>
+            <p className="text-[11px] text-muted-foreground">
+              "Abrir projeção" mostra um slide por versículo/frase em tela cheia: abra no computador ligado ao telão e passe com as setas, espaço ou o passador de slides.
+            </p>
           </CardContent>
         </Card>
       )}
@@ -263,6 +276,40 @@ export default function SermonEditorPage() {
                   {edit && (
                     <Button size="sm" variant="ghost" className="h-8" onClick={() => updateBlock(i, { verses: [...b.verses, { ref: "", text: "" }] })}>
                       <BookMarked className="w-4 h-4 mr-1.5" />Adicionar versículo
+                    </Button>
+                  )}
+                </div>
+
+                {/* Frases para a projeção */}
+                <div className="space-y-2">
+                  {(b.phrases || []).map((ph, pi) => (
+                    <div key={pi} className="rounded-md border border-primary/30 bg-primary/5 p-2">
+                      {edit ? (
+                        <div className="flex gap-2 items-start">
+                          <Quote className="w-4 h-4 text-primary mt-2 shrink-0" />
+                          <Textarea
+                            rows={2}
+                            className="text-sm bg-background"
+                            placeholder="Frase que vai aparecer no telão"
+                            value={ph}
+                            onChange={(e) => updateBlock(i, { phrases: (b.phrases || []).map((x, k) => (k === pi ? e.target.value : x)) })}
+                          />
+                          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" title="Remover frase" onClick={() => updateBlock(i, { phrases: (b.phrases || []).filter((_, k) => k !== pi) })}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2">
+                          <Quote className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          <p className="text-sm flex-1 font-medium">{ph}</p>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" title="Copiar" onClick={() => copy(ph, "Frase")}><Copy className="w-3.5 h-3.5" /></Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {edit && (
+                    <Button size="sm" variant="ghost" className="h-8" onClick={() => updateBlock(i, { phrases: [...(b.phrases || []), ""] })}>
+                      <Quote className="w-4 h-4 mr-1.5" />Adicionar frase para a projeção
                     </Button>
                   )}
                 </div>

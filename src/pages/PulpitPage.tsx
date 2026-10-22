@@ -301,6 +301,12 @@ export default function PulpitPage() {
                   {v.text && <p className="leading-relaxed text-white/90">{v.text}</p>}
                 </div>
               ))}
+              {(block.phrases || []).filter((p) => p.trim()).map((p, i) => (
+                <div key={`ph${i}`} className="rounded-lg bg-white/5 border border-white/15 p-[0.6em]">
+                  <p className="text-[0.5em] uppercase tracking-widest text-amber-300/80 font-semibold mb-[0.3em]">No telão</p>
+                  <p className="font-semibold leading-snug">“{p}”</p>
+                </div>
+              ))}
               {block.notes && (
                 <p className="text-[0.7em] text-white/60 whitespace-pre-line rounded-lg border border-dashed border-white/20 p-[0.8em]">{block.notes}</p>
               )}

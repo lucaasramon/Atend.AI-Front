@@ -83,7 +83,8 @@ const HELP: Record<string, PageHelp> = {
     who: "Cada pastor vê e edita as suas pregações. O líder da Mídia vê as de todos (só leitura) para preparar a projeção.",
     actions: [
       "Criar a pregação e ligar ao culto da Agenda",
-      "Em cada bloco: texto principal, versículos (cole o texto), anotações e minutos planejados",
+      "Em cada bloco: texto principal, versículos (cole o texto), frases para a projeção, anotações e minutos planejados",
+      "Projeção: abre versículos e frases em tela cheia, um por slide, para o telão (setas/espaço passam, B deixa a tela preta)",
       "Púlpito: tela sempre acesa, letras grandes, toque nas laterais para passar de bloco, relógio do bloco e total",
       "Funciona sem internet: abra a pregação uma vez com internet antes do culto",
       "Histórico: quando e quanto tempo levou cada pregação",

@@ -50,6 +50,7 @@ import SermonsPage from "@/pages/SermonsPage";
 import HomePage from "@/pages/HomePage";
 import SermonEditorPage from "@/pages/SermonEditorPage";
 import PulpitPage from "@/pages/PulpitPage";
+import ProjectionPage from "@/pages/ProjectionPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import NotFound from "@/pages/NotFound";
 
@@ -106,6 +107,7 @@ const App = () => (
               <Route path="/admin/pregacoes" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><SermonsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/pregacoes/:id" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><SermonEditorPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/pulpito/:id" element={<AdminProtectedRoute roles={TEAM}><PulpitPage /></AdminProtectedRoute>} />
+              <Route path="/projecao/:id" element={<AdminProtectedRoute roles={TEAM}><ProjectionPage /></AdminProtectedRoute>} />
               <Route path="/admin/inscricoes" element={<AdminProtectedRoute roles={["admin", "agenda"]}><AdminLayout><FormsPage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/cadastros" element={<AdminProtectedRoute><AdminLayout><PeoplePage /></AdminLayout></AdminProtectedRoute>} />
               <Route path="/admin/midia" element={<AdminProtectedRoute roles={TEAM}><AdminLayout><MediaPage /></AdminLayout></AdminProtectedRoute>} />
