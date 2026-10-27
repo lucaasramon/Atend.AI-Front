@@ -64,7 +64,7 @@ const HELP: Record<string, PageHelp> = {
   },
   "/admin/escalas": {
     purpose:
-      "Quem serve em cada culto e em qual área. Na véspera, cada escalado recebe no WhatsApp o checklist da sua área e marca os itens pelo celular.",
+      "Quem serve em cada culto e em qual área. A escala vai para o grupo da área; o checklist no privado só é enviado em eventos marcados com \"Avisar também no privado\".",
     who: ALL,
     actions: [
       "Por área: escolher a área (a sua já vem marcada) e ver a escala por data, com destaque para os dias em que você serve",

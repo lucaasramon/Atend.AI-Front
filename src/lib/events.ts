@@ -18,6 +18,8 @@ export interface EventItem {
   reminder_offsets: number[] | null;
   /** true = o robô não lembra deste evento */
   reminders_off: boolean;
+  /** true = também avisa as pessoas no privado (padrão: só grupos) */
+  notify_private?: boolean;
   reminders: ReminderRecord[];
   status: EventStatus;
   rejection_reason: string | null;

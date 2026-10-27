@@ -51,6 +51,8 @@ const emptyForm = {
   // Lembretes: padrão, dias escolhidos ou nenhum
   reminder_mode: "default" as "default" | "custom" | "off",
   offset_days: [] as number[],
+  // Avisar também no privado (padrão desligado: os avisos vão para os grupos)
+  notify_private: false,
   ministry_ids: [] as string[],
   location_ids: [] as string[],
   category: "",
@@ -119,6 +121,7 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             group_jid: event.group_jid || "",
             reminder_mode: event.reminders_off ? "off" : event.reminder_offsets?.length ? "custom" : "default",
             offset_days: event.reminder_offsets?.length ? [...event.reminder_offsets] : [...config.offsets],
+            notify_private: !!event.notify_private,
             ministry_ids: event.ministries.map((m) => m.id),
             location_ids: event.locations.map((l) => l.id),
             category: event.category || "",
@@ -247,6 +250,7 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
       group_jid: form.group_jid,
       reminder_offsets: form.reminder_mode === "custom" ? form.offset_days : null,
       reminders_off: form.reminder_mode === "off",
+      notify_private: form.notify_private,
       ministry_ids: form.ministry_ids,
       location_ids: form.location_ids,
     };
@@ -571,6 +575,22 @@ export default function EventFormDialog({ open, onOpenChange, event, config, onS
             {form.reminder_mode === "off" && (
               <p className="text-xs text-muted-foreground">
                 O robô não manda lembretes deste evento{repeating ? " (em nenhuma das datas)" : ""}. Ele continua no calendário e nos resumos do mês e da semana.
+              </p>
+            )}
+          </div>
+
+          <div className={`rounded-md border p-3 space-y-2 ${form.notify_private ? "border-warning/50 bg-warning/5" : "border-border"}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Avisar também no privado</p>
+                <p className="text-xs text-muted-foreground">Desligado: os avisos deste evento vão só para os grupos.</p>
+              </div>
+              <Switch checked={form.notify_private} onCheckedChange={(v) => setForm({ ...form, notify_private: v })} />
+            </div>
+            {form.notify_private && (
+              <p className="text-xs text-warning">
+                O robô também manda mensagem individual para: líderes das áreas (pedido de confirmação), quem estiver escalado (checklist)
+                e responsáveis pelas tarefas do checklist do evento. Use só quando for realmente necessário, para evitar envio em massa.
               </p>
             )}
           </div>
