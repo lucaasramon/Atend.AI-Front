@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ChurchStats from "@/components/ChurchStats";
 
 interface Task { id: string; title: string; due_date: string | null; event_id: string; event_title: string; starts_at: string }
 interface Ack { id: string; title: string; starts_at: string; ministry: string; deadline: string }
@@ -120,6 +121,7 @@ export default function HomePage() {
 
       {/* ---------- Pastoral ---------- */}
       {data.pastoral && <Pastoral data={data.pastoral} act={act} />}
+      {data.is_pastor && <ChurchStats />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Pendências */}

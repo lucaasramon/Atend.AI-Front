@@ -59,6 +59,13 @@
     --gradient-danger: linear-gradient(135deg, hsl(0, 72%, 55%), hsl(15, 80%, 50%));
     --shadow-glow: 0 0 0 1px hsl(42 98% 49% / 0.35);
     --shadow-card: 0 4px 24px hsl(30 20% 10% / 0.06);
+
+    /* Gráficos (paleta validada para daltonismo) */
+    --viz-member: #2a78d6;
+    --viz-regular: #eb6834;
+    --viz-visitor: #1baf7a;
+    --viz-male: #6250d6;
+    --viz-female: #e87ba4;
   }
 
   .dark {
@@ -111,6 +118,17 @@
     --gradient-danger: linear-gradient(135deg, hsl(0, 72%, 55%), hsl(15, 80%, 50%));
     --shadow-glow: 0 0 20px hsl(42 98% 49% / 0.12);
     --shadow-card: 0 4px 24px hsl(0 0% 0% / 0.35);
+
+    --viz-member: #3987e5;
+    --viz-regular: #d95926;
+    --viz-visitor: #199e70;
+    --viz-male: #9085e9;
+    --viz-female: #d55181;
+  }
+
+  /* Mapa dos bairros no tema escuro */
+  .dark .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) saturate(0.4);
   }
 
 }
