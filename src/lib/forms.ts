@@ -43,8 +43,15 @@ export interface Person {
   status: "new" | "seen";
   member_id: string | null;
   created_at: string;
-  updated_at: string;
+  /** form = preencheu o formulário; user = usuário da plataforma sem formulário (whatsapp pode vir vazio) */
+  source: "form" | "user";
+  /** Usuário da plataforma com o mesmo WhatsApp: sempre conta como membro */
+  user_id: string | null;
+  user_role: "admin" | "agenda" | "viewer" | null;
+  church_role: string | null;
 }
+
+export const USER_ROLE_LABEL: Record<string, string> = { admin: "Administrador", agenda: "Agenda", viewer: "Visualizador" };
 
 export type FieldType = "text" | "textarea" | "number" | "date" | "select" | "yesno";
 

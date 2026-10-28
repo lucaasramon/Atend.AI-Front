@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Cake, Check, Download, Loader2, Search, Trash2, UserPlus, UsersRound } from "lucide-react";
+import { Cake, Check, Download, Loader2, Search, ShieldCheck, Trash2, UserPlus, UsersRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -9,6 +10,7 @@ import {
   Person,
   RELATION_LABEL,
   Relation,
+  USER_ROLE_LABEL,
   ageFrom,
   downloadCsv,
   formatPhone,
@@ -35,7 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type Filter = "all" | "new" | Relation | "birthdays";
+type Filter = "all" | "new" | Relation | "team" | "birthdays";
 
 const RELATION_STYLE: Record<Relation, string> = {
   visitor: "bg-warning/15 text-warning border-warning/30",
@@ -45,6 +47,8 @@ const RELATION_STYLE: Record<Relation, string> = {
 
 /** "1990-05-03" → "03/05/1990" (sem fuso: é uma data, não um horário) */
 const brDate = (d: string | null) => (d ? d.slice(0, 10).split("-").reverse().join("/") : "");
+/** Perfil de quem usa a plataforma: a função na igreja, ou o tipo de acesso */
+const profile = (p: Person) => (p.user_role ? p.church_role || USER_ROLE_LABEL[p.user_role] : "");
 
 export default function PeoplePage() {
   const { toast } = useToast();
@@ -75,6 +79,7 @@ export default function PeoplePage() {
         filter === "all" ? true
         : filter === "new" ? p.status === "new"
         : filter === "birthdays" ? birthdayThisMonth(p)
+        : filter === "team" ? !!p.user_id
         : p.relation === filter
       )
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (!!digits && p.whatsapp.includes(digits)))
@@ -82,7 +87,7 @@ export default function PeoplePage() {
   }, [people, filter, search]);
 
   const count = (f: Filter) =>
-    (people || []).filter((p) => (f === "new" ? p.status === "new" : f === "birthdays" ? birthdayThisMonth(p) : p.relation === f)).length;
+    (people || []).filter((p) => (f === "new" ? p.status === "new" : f === "birthdays" ? birthdayThisMonth(p) : f === "team" ? !!p.user_id : p.relation === f)).length;
 
   const show = async (p: Person) => {
     setOpen(p);
@@ -122,9 +127,9 @@ export default function PeoplePage() {
 
   const exportCsv = () =>
     downloadCsv("cadastros.csv", [
-      ["Nome", "Tipo", "Nascimento", "Idade", "WhatsApp", "E-mail", "Sexo", "Estado civil", "Bairro/cidade", "Batizado", "Como conheceu", "Quer contato", "Quer servir em", "Pedido/observação", "Cadastrado em"],
+      ["Nome", "Tipo", "Perfil na plataforma", "Nascimento", "Idade", "WhatsApp", "E-mail", "Sexo", "Estado civil", "Bairro/cidade", "Batizado", "Como conheceu", "Quer contato", "Quer servir em", "Pedido/observação", "Cadastrado em"],
       ...list.map((p) => [
-        p.name, RELATION_LABEL[p.relation], brDate(p.birth_date), ageFrom(p.birth_date), formatPhone(p.whatsapp), p.email,
+        p.name, RELATION_LABEL[p.relation], profile(p), brDate(p.birth_date), ageFrom(p.birth_date), p.whatsapp ? formatPhone(p.whatsapp) : "", p.email,
         p.gender ? GENDER_LABEL[p.gender] : "", p.marital_status ? MARITAL_LABEL[p.marital_status] : "", p.neighborhood,
         p.baptized === null ? "" : p.baptized ? "Sim" : "Não", p.how_found, p.wants_contact ? "Sim" : "", ministryNames(p.interests), p.notes,
         format(new Date(p.created_at), "dd/MM/yyyy HH:mm"),
@@ -143,7 +148,7 @@ export default function PeoplePage() {
     <div className="space-y-6">
       <PageHeader
         title="Cadastros"
-        description="Membros, frequentadores e visitantes que preencheram o formulário da igreja."
+        description="Membros, frequentadores e visitantes que preencheram o formulário da igreja, e os usuários da plataforma (todos membros)."
         actions={
           <>
             <Button variant="outline" onClick={() => setBirthdays(true)}><Cake className="w-4 h-4 mr-2" />Parabéns automáticos</Button>
@@ -168,6 +173,7 @@ export default function PeoplePage() {
             <TabsTrigger value="visitor">Visitantes ({count("visitor")})</TabsTrigger>
             <TabsTrigger value="regular">Frequentadores ({count("regular")})</TabsTrigger>
             <TabsTrigger value="member">Membros ({count("member")})</TabsTrigger>
+            <TabsTrigger value="team"><ShieldCheck className="w-3.5 h-3.5 mr-1" />Usuários da plataforma ({count("team")})</TabsTrigger>
             <TabsTrigger value="birthdays"><Cake className="w-3.5 h-3.5 mr-1" />Aniversariantes ({count("birthdays")})</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -194,10 +200,11 @@ export default function PeoplePage() {
                   {p.status === "new" && <Badge className="text-[10px] shrink-0">Novo</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {formatPhone(p.whatsapp)}{age !== null && ` · ${age} anos`}{filter === "birthdays" && ` · dia ${p.birth_date!.slice(8, 10)}`}
+                  {p.whatsapp ? formatPhone(p.whatsapp) : p.email}{age !== null && ` · ${age} anos`}{filter === "birthdays" && ` · dia ${p.birth_date!.slice(8, 10)}`}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   <Badge variant="outline" className={`text-[11px] ${RELATION_STYLE[p.relation]}`}>{RELATION_LABEL[p.relation]}</Badge>
+                  {p.user_role && <Badge variant="outline" className="text-[11px]"><ShieldCheck className="w-3 h-3 mr-1" />{profile(p)}</Badge>}
                   {p.wants_contact && <Badge variant="outline" className="text-[11px]">Quer contato</Badge>}
                   {p.member_id && <Badge variant="outline" className="text-[11px]"><UsersRound className="w-3 h-3 mr-1" />Nas escalas</Badge>}
                 </div>
@@ -216,10 +223,18 @@ export default function PeoplePage() {
               </DialogHeader>
               <div className="flex flex-wrap gap-1.5">
                 <Badge variant="outline" className={RELATION_STYLE[open.relation]}>{RELATION_LABEL[open.relation]}</Badge>
+                {open.user_role && <Badge variant="outline"><ShieldCheck className="w-3 h-3 mr-1" />Usuário da plataforma</Badge>}
                 {open.wants_contact && <Badge variant="outline">Quer que entrem em contato</Badge>}
               </div>
+              {open.source === "user" && (
+                <p className="text-xs text-muted-foreground">
+                  Ainda não preencheu o formulário de cadastro: por isso não há nascimento, bairro e os outros dados. Mande o link para a pessoa; quando ela preencher com o mesmo WhatsApp, os dados aparecem aqui.
+                </p>
+              )}
               <div>
-                {info("WhatsApp", <a href={waLink(open.whatsapp)} target="_blank" rel="noreferrer" className="text-primary hover:underline">{formatPhone(open.whatsapp)}</a>)}
+                {info("Perfil na plataforma", open.user_role && USER_ROLE_LABEL[open.user_role])}
+                {info("Função na igreja", open.church_role)}
+                {info("WhatsApp", open.whatsapp && <a href={waLink(open.whatsapp)} target="_blank" rel="noreferrer" className="text-primary hover:underline">{formatPhone(open.whatsapp)}</a>)}
                 {info("Nascimento", open.birth_date && `${brDate(open.birth_date)} (${ageFrom(open.birth_date)} anos)`)}
                 {info("E-mail", open.email)}
                 {info("Sexo", open.gender && GENDER_LABEL[open.gender])}
@@ -228,7 +243,7 @@ export default function PeoplePage() {
                 {info("Batizado(a)", open.baptized === null ? null : open.baptized ? "Sim" : "Não")}
                 {info("Como conheceu", open.how_found)}
                 {info("Quer servir em", ministryNames(open.interests))}
-                {info("Cadastrado em", format(new Date(open.created_at), "dd/MM/yyyy HH:mm"))}
+                {info(open.source === "user" ? "Usuário desde" : "Cadastrado em", format(new Date(open.created_at), "dd/MM/yyyy HH:mm"))}
               </div>
               {open.notes && (
                 <div className="rounded-md bg-muted p-3 text-sm">
@@ -237,12 +252,19 @@ export default function PeoplePage() {
                 </div>
               )}
               <DialogFooter className="gap-2 sm:justify-between">
-                <Button variant="ghost" className="text-destructive" onClick={() => setToDelete(open)}><Trash2 className="w-4 h-4 mr-2" />Excluir</Button>
+                {/* Usuário sem formulário: é gerenciado em Usuários */}
+                {open.source === "form" ? (
+                  <Button variant="ghost" className="text-destructive" onClick={() => setToDelete(open)}><Trash2 className="w-4 h-4 mr-2" />Excluir</Button>
+                ) : (
+                  <Button variant="ghost" asChild><Link to="/admin/usuarios"><ShieldCheck className="w-4 h-4 mr-2" />Ver em Usuários</Link></Button>
+                )}
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" asChild>
-                    <a href={waLink(open.whatsapp)} target="_blank" rel="noreferrer">Chamar no WhatsApp</a>
-                  </Button>
-                  {open.member_id ? (
+                  {open.whatsapp && (
+                    <Button variant="outline" asChild>
+                      <a href={waLink(open.whatsapp)} target="_blank" rel="noreferrer">Chamar no WhatsApp</a>
+                    </Button>
+                  )}
+                  {open.source === "user" ? null : open.member_id ? (
                     <Button disabled variant="secondary"><Check className="w-4 h-4 mr-2" />Nas escalas</Button>
                   ) : (
                     <Button onClick={() => toMember(open)} disabled={busy} title="Inclui a pessoa em Escalas → Membros, com as áreas que ela escolheu">
@@ -262,7 +284,10 @@ export default function PeoplePage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir o cadastro de {toDelete?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>Os dados dessa pessoa são apagados. Se ela já estiver nas escalas, continua lá.</AlertDialogDescription>
+            <AlertDialogDescription>
+              Os dados do formulário são apagados. Se ela já estiver nas escalas, continua lá.
+              {toDelete?.user_id && " Como é usuária da plataforma, continua na lista como membro."}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
